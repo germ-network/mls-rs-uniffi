@@ -2,9 +2,9 @@
 resolver = "2"
 
 members = [
-    "mls-rs-uniffi-ios",
+    "mls-rs-uniffi-ios", "uniffi-bindgen",
 ]
 
 default-members = [
-    "mls-rs-uniffi-ios",
+    "mls-rs-uniffi-ios", "uniffi-bindgen",
 ]
