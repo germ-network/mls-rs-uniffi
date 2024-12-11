@@ -9,6 +9,8 @@ name = "mls_rs_uniffi_ios"
 
 [dependencies]
 uniffi = { git = "https://github.com/mozilla/uniffi-rs/", version = "0.28.3" }
-mls-rs = { git = "https://github.com/germ-mark/mls-rs/", rev="8df679164ac0c94077e3b0528f780177d92839c7", features = ["replace_proposal"]}
+mls-rs = { git = "https://github.com/germ-mark/mls-rs/", rev="ffabb3376738572c75f6f33d66d00322d56d8560", features = ["replace_proposal"]}
 mls-rs-core = { git = "https://github.com/germ-mark/mls-rs/", version = "0.20.0"}
 mls-rs-crypto-cryptokit = { git = "https://github.com/germ-mark/mls-rs/", version="0.2.0"}
+
+thiserror = "1.0.57"
