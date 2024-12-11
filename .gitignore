@@ -1,2 +1,4 @@
+ios/
+bindings/
 /target
 Cargo.lock
