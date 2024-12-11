@@ -3,4 +3,9 @@ name = "mls-rs-uniffi-ios"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+ crate_type = ["cdylib", "staticlib"]
+ name = "mls_rs_uniffi_ios"
+
 [dependencies]
+uniffi = { git = "https://github.com/mozilla/uniffi-rs/", version = "0.28.3" }
