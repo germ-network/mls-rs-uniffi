@@ -13,4 +13,5 @@ mls-rs = { git = "https://github.com/germ-mark/mls-rs/", rev="ffabb3376738572c75
 mls-rs-core = { git = "https://github.com/germ-mark/mls-rs/", version = "0.20.0"}
 mls-rs-crypto-cryptokit = { git = "https://github.com/germ-mark/mls-rs/", version="0.2.0"}
 
+maybe-async = "0.2.10"
 thiserror = "1.0.57"

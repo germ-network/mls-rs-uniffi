@@ -17,7 +17,26 @@
 //!
 //! [UniFFI]: https://mozilla.github.io/uniffi-rs/
 
-use mls_rs::error::{IntoAnyError, MlsError};
+mod config;
+
+use std::sync::Arc;
+
+// pub use config::ClientConfig;
+// use config::UniFFIConfig;
+
+use std::sync::Mutex;
+
+use mls_rs::error::IntoAnyError;
+use mls_rs::group;
+use mls_rs::identity::basic;
+use mls_rs::mls_rs_codec::MlsDecode;
+use mls_rs::mls_rs_codec::MlsEncode;
+use mls_rs::mls_rules;
+use mls_rs::{CipherSuiteProvider, CryptoProvider};
+use mls_rs_core::identity;
+use mls_rs_core::identity::{BasicCredential, IdentityProvider};
+use mls_rs_crypto_cryptokit::CryptoKitProvider;
+// use config::{SigningIdentity, SignatureKeypair, SignatureSecretKey, CipherSuite, ExtensionList};
 
 uniffi::setup_scaffolding!();
 
@@ -50,7 +69,7 @@ pub enum MlSrsError {
     #[error("Inconsistent Optional Parameters")]
     InconsistentOptionalParameters,
     #[error("Missing Basic Credential")]
-    MissingBasicCredential
+    MissingBasicCredential,
 }
 
 impl IntoAnyError for MlSrsError {}
