@@ -1,18 +1,18 @@
-// use mls_rs_core::identity;
-// use std::fmt::Debug;
+use mls_rs_core::identity;
+use std::fmt::Debug;
 use std::sync::Arc;
 
-// use mls_rs::{
-//     client_builder::{self, WithKeyPackageRepo, WithGroupStateStorage},
-//     error::MlsError,
-//     storage_provider::in_memory::InMemoryKeyPackageStorage,
-//     storage_provider::in_memory::InMemoryGroupStateStorage,
-//     time::MlsTime
-// };
+use mls_rs::{
+    client_builder::{self, WithGroupStateStorage, WithKeyPackageRepo},
+    //     error::MlsError,
+    //     storage_provider::in_memory::InMemoryKeyPackageStorage,
+    //     storage_provider::in_memory::InMemoryGroupStateStorage,
+    //     time::MlsTime
+};
 
 use mls_rs_core::key_package::KeyPackageData;
 
-// use mls_rs_crypto_cryptokit::CryptoKitProvider;
+use mls_rs_crypto_cryptokit::CryptoKitProvider;
 
 use self::group_state::{GroupStateStorageProtocol, KeyPackageStorageProtocol};
 // use self::group_state::{KeyPackageStorageFfi, GroupStateStorage, GroupStateStorageAdapter, KeyPackageStorageAdapter};
@@ -101,16 +101,16 @@ impl mls_rs_core::group::GroupStateStorage for ClientGroupStorage {
     }
 }
 
-// pub type UniFFIConfig = client_builder::WithIdentityProvider<
-//     IdentityProviderStorage,
-//     client_builder::WithCryptoProvider<
-//         CryptoKitProvider,
-//         WithKeyPackageRepo <
-//             ClientKeyPackageStorage,
-//             WithGroupStateStorage<ClientGroupStorage, client_builder::BaseConfig>,
-//         >,
-//     >,
-// >;
+pub type UniFFIConfig = client_builder::WithIdentityProvider<
+    IdentityProviderStorage,
+    client_builder::WithCryptoProvider<
+        CryptoKitProvider,
+        WithKeyPackageRepo<
+            ClientKeyPackageStorage,
+            WithGroupStateStorage<ClientGroupStorage, client_builder::BaseConfig>,
+        >,
+    >,
+>;
 
 // #[derive(Debug, Clone, uniffi::Record)]
 // pub struct ClientConfig {
@@ -178,17 +178,17 @@ impl mls_rs_core::group::GroupStateStorage for ClientGroupStorage {
 // /// The default BasicCredential Identity Provider asserts identity equality
 // /// For Germ, the basic credential is just an anchor into our evolving identity architecture
 
-// #[derive(Clone, Debug, PartialEq, Eq, uniffi::Object)]
-// #[uniffi::export(Eq)]
-// pub struct SigningIdentity {
-//     pub inner: identity::SigningIdentity,
-// }
+#[derive(Clone, Debug, PartialEq, Eq, uniffi::Object)]
+#[uniffi::export(Eq)]
+pub struct SigningIdentityFFI {
+    pub inner: identity::SigningIdentity,
+}
 
-// impl From<identity::SigningIdentity> for SigningIdentity {
-//     fn from(inner: identity::SigningIdentity) -> Self {
-//         Self { inner }
-//     }
-// }
+impl From<identity::SigningIdentity> for SigningIdentityFFI {
+    fn from(inner: identity::SigningIdentity) -> Self {
+        Self { inner }
+    }
+}
 
 // #[cfg_attr(not(mls_build_async), maybe_async::must_be_sync)]
 // #[cfg_attr(mls_build_async, maybe_async::must_be_async)]
@@ -266,17 +266,17 @@ impl mls_rs_core::group::GroupStateStorage for ClientGroupStorage {
 //     pub secret_key: SignatureSecretKey,
 // }
 
-// /// A [`mls_rs::ExtensionList`] wrapper.
-// #[derive(uniffi::Object, Debug, Clone)]
-// pub struct ExtensionList {
-//     _inner: mls_rs::ExtensionList,
-// }
+/// A [`mls_rs::ExtensionList`] wrapper.
+#[derive(uniffi::Object, Debug, Clone)]
+pub struct ExtensionListFFI {
+    _inner: mls_rs::ExtensionList,
+}
 
-// impl From<mls_rs::ExtensionList> for ExtensionList {
-//     fn from(inner: mls_rs::ExtensionList) -> Self {
-//         Self { _inner: inner }
-//     }
-// }
+impl From<mls_rs::ExtensionList> for ExtensionListFFI {
+    fn from(inner: mls_rs::ExtensionList) -> Self {
+        Self { _inner: inner }
+    }
+}
 
 // /// A [`mls_rs::Extension`] wrapper.
 // #[derive(uniffi::Object, Debug, Clone)]
@@ -290,74 +290,71 @@ impl mls_rs_core::group::GroupStateStorage for ClientGroupStorage {
 //     }
 // }
 
-// /// Identity system that can be used to validate a
-// /// [`SigningIdentity`](mls-rs-core::identity::SigningIdentity)
-// #[cfg_attr(mls_build_async, uniffi::export(with_foreign))]
-// #[cfg_attr(mls_build_async, maybe_async::must_be_async)]
-// #[cfg_attr(not(mls_build_async), maybe_async::must_be_sync)]
-// #[cfg_attr(not(mls_build_async), uniffi::export(with_foreign))]
-// pub trait IdentityProviderFFI: Send + Sync + Debug {
+/// Identity system that can be used to validate a
+/// [`SigningIdentity`](mls-rs-core::identity::SigningIdentity)
+#[maybe_async::must_be_sync]
+#[uniffi::export(with_foreign)]
+pub trait IdentityProviderProtocol: Send + Sync + Debug {
+    /// Determine if `signing_identity` is valid for a group member.
+    ///
+    /// A `timestamp` value can optionally be supplied to aid with validation
+    /// of a [`Credential`](mls-rs-core::identity::Credential) that requires
+    /// time based context. For example, X.509 certificates can become expired.
+    async fn validate_member(
+        &self,
+        signing_identity: Arc<SigningIdentityFFI>,
+        timestamp: Option<u64>,
+        extensions: Option<Arc<ExtensionListFFI>>,
+    ) -> Result<(), MlSrsError>;
 
-//     /// Determine if `signing_identity` is valid for a group member.
-//     ///
-//     /// A `timestamp` value can optionally be supplied to aid with validation
-//     /// of a [`Credential`](mls-rs-core::identity::Credential) that requires
-//     /// time based context. For example, X.509 certificates can become expired.
-//     async fn validate_member(
-//         &self,
-//         signing_identity: Arc<SigningIdentity>,
-//         timestamp: Option<u64>,
-//         extensions: Option<Arc<ExtensionList>>,
-//     ) -> Result<(), MlSrsError>;
+    /// Determine if `signing_identity` is valid for an external sender in
+    /// the ExternalSendersExtension stored in the group context.
+    ///
+    /// A `timestamp` value can optionally be supplied to aid with validation
+    /// of a [`Credential`](mls-rs-core::identity::Credential) that requires
+    /// time based context. For example, X.509 certificates can become expired.
+    async fn validate_external_sender(
+        &self,
+        signing_identity: Arc<SigningIdentityFFI>,
+        timestamp: Option<u64>,
+        extensions: Option<Arc<ExtensionListFFI>>,
+    ) -> Result<(), MlSrsError>;
 
-//     /// Determine if `signing_identity` is valid for an external sender in
-//     /// the ExternalSendersExtension stored in the group context.
-//     ///
-//     /// A `timestamp` value can optionally be supplied to aid with validation
-//     /// of a [`Credential`](mls-rs-core::identity::Credential) that requires
-//     /// time based context. For example, X.509 certificates can become expired.
-//     async fn validate_external_sender(
-//         &self,
-//         signing_identity: Arc<SigningIdentity>,
-//         timestamp: Option<u64>,
-//         extensions: Option<Arc<ExtensionList>>,
-//     ) -> Result<(), MlSrsError>;
+    /// A unique identifier for `signing_identity`.
+    ///
+    /// The MLS protocol requires that each member of a group has a unique
+    /// set of identifiers according to the application.
+    async fn identity(
+        &self,
+        signing_identity: Arc<SigningIdentityFFI>,
+        extensions: Arc<ExtensionListFFI>,
+    ) -> Result<Vec<u8>, MlSrsError>;
 
-//     /// A unique identifier for `signing_identity`.
-//     ///
-//     /// The MLS protocol requires that each member of a group has a unique
-//     /// set of identifiers according to the application.
-//     async fn identity(
-//         &self,
-//         signing_identity: Arc<SigningIdentity>,
-//         extensions: Arc<ExtensionList>,
-//     ) -> Result<Vec<u8>, MlSrsError>;
+    /// Determines if `successor` can remove `predecessor` as part of an external commit.
+    ///
+    /// The MLS protocol allows for removal of an existing member when adding a
+    /// new member via external commit. This function determines if a removal
+    /// should be allowed by providing the target member to be removed as
+    /// `predecessor` and the new member as `successor`.
+    async fn valid_successor(
+        &self,
+        predecessor: Arc<SigningIdentityFFI>,
+        successor: Arc<SigningIdentityFFI>,
+        extensions: Arc<ExtensionListFFI>,
+    ) -> Result<bool, MlSrsError>;
 
-//     /// Determines if `successor` can remove `predecessor` as part of an external commit.
-//     ///
-//     /// The MLS protocol allows for removal of an existing member when adding a
-//     /// new member via external commit. This function determines if a removal
-//     /// should be allowed by providing the target member to be removed as
-//     /// `predecessor` and the new member as `successor`.
-//     async fn valid_successor(
-//         &self,
-//         predecessor: Arc<SigningIdentity>,
-//         successor: Arc<SigningIdentity>,
-//         extensions: Arc<ExtensionList>,
-//     ) -> Result<bool, MlSrsError>;
+    /// Credential types that are supported by this provider.
+    fn supported_types(&self) -> Vec<u16>;
+}
 
-//     /// Credential types that are supported by this provider.
-//     fn supported_types(&self) -> Vec<u16>;
-// }
+#[derive(Debug, Clone)]
+pub(crate) struct IdentityProviderStorage(Arc<dyn IdentityProviderProtocol>);
 
-// #[derive(Debug, Clone)]
-// pub(crate) struct IdentityProviderStorage(Arc<dyn IdentityProviderFFI>);
-
-// impl From<Arc<dyn IdentityProviderFFI>> for IdentityProviderStorage {
-//     fn from(value: Arc<dyn IdentityProviderFFI>) -> Self {
-//         Self(value)
-//     }
-// }
+impl From<Arc<dyn IdentityProviderProtocol>> for IdentityProviderStorage {
+    fn from(value: Arc<dyn IdentityProviderProtocol>) -> Self {
+        Self(value)
+    }
+}
 
 // #[cfg_attr(not(mls_build_async), maybe_async::must_be_sync)]
 // #[cfg_attr(mls_build_async, maybe_async::must_be_async)]
