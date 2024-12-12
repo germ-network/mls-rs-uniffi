@@ -5,22 +5,22 @@ use std::sync::Mutex;
 use crate::MlSrsError;
 
 #[derive(Clone, Debug, uniffi::Record)]
-pub struct KeyPackageData {
+pub struct KeyPackageDataFFI {
     pub key_package_bytes: Vec<u8>,
     pub init_key_data: Vec<u8>,
     pub leaf_node_key_data: Vec<u8>,
     pub expiration: u64,
 }
 
-impl From<mls_rs_core::key_package::KeyPackageData> for KeyPackageData {
+impl From<mls_rs::storage_provider::KeyPackageData> for KeyPackageDataFFI {
     fn from(
-        mls_rs_core::key_package::KeyPackageData {
+        mls_rs::storage_provider::KeyPackageData {
             key_package_bytes,
             init_key,
             leaf_node_key,
             expiration,
             ..
-        }: mls_rs_core::key_package::KeyPackageData,
+        }: mls_rs::storage_provider::KeyPackageData,
     ) -> Self {
         Self {
             key_package_bytes: key_package_bytes,
@@ -31,20 +31,20 @@ impl From<mls_rs_core::key_package::KeyPackageData> for KeyPackageData {
     }
 }
 
-impl From<KeyPackageData> for mls_rs_core::key_package::KeyPackageData {
+impl From<KeyPackageDataFFI> for mls_rs::storage_provider::KeyPackageData {
     fn from(
-        KeyPackageData {
+        KeyPackageDataFFI {
             key_package_bytes,
             init_key_data,
             leaf_node_key_data,
             expiration,
             ..
-        }: KeyPackageData,
+        }: KeyPackageDataFFI,
     ) -> Self {
-        mls_rs_core::key_package::KeyPackageData::new(
+        mls_rs::storage_provider::KeyPackageData::new(
             key_package_bytes,
-            mls_rs_core::crypto::HpkeSecretKey::from(init_key_data),
-            mls_rs_core::crypto::HpkeSecretKey::from(leaf_node_key_data),
+            mls_rs::crypto::HpkeSecretKey::from(init_key_data),
+            mls_rs::crypto::HpkeSecretKey::from(leaf_node_key_data),
             expiration,
         )
     }
@@ -52,7 +52,7 @@ impl From<KeyPackageData> for mls_rs_core::key_package::KeyPackageData {
 
 #[maybe_async::must_be_sync]
 #[uniffi::export(with_foreign)]
-pub trait KeyPackageStorageFfi: Send + Sync + Debug {
+pub trait KeyPackageStorageProtocol: Send + Sync + Debug {
     /// Delete [`KeyPackageData`] referenced by `id`.
     ///
     /// This function is called automatically when the key package referenced
@@ -67,64 +67,64 @@ pub trait KeyPackageStorageFfi: Send + Sync + Debug {
     /// Store [`KeyPackageData`] that can be accessed by `id` in the future.
     ///
     /// This function is automatically called whenever a new key package is created.
-    async fn insert(&self, id: Vec<u8>, pkg: KeyPackageData) -> Result<(), MlSrsError>;
+    async fn insert(&self, id: Vec<u8>, pkg: KeyPackageDataFFI) -> Result<(), MlSrsError>;
 
     /// Retrieve [`KeyPackageData`] by its `id`.
     ///
     /// `None` should be returned in the event that no key packages are found
     /// that match `id`.
-    async fn get(&self, id: Vec<u8>) -> Result<Option<KeyPackageData>, MlSrsError>;
+    async fn get(&self, id: Vec<u8>) -> Result<Option<KeyPackageDataFFI>, MlSrsError>;
 }
 
-// /// Adapt a mls-rs `KeyPackageStorage` implementation.
-// ///
-// /// This is used to adapt a mls-rs `KeyPackageStorage` implementation
-// /// to our own `KeyPackageStorage` trait. This way we can use any
-// /// standard mls-rs group state storage from the FFI layer.
-// #[derive(Debug)]
-// pub(crate) struct KeyPackageStorageAdapter<S>(Mutex<S>);
+/// Adapt a mls-rs `KeyPackageStorage` implementation.
+///
+/// This is used to adapt a mls-rs `KeyPackageStorage` implementation
+/// to our own `KeyPackageStorage` trait. This way we can use any
+/// standard mls-rs group state storage from the FFI layer.
+#[derive(Debug)]
+pub(crate) struct KeyPackageStorageAdapter<S>(Mutex<S>);
 
-// impl<S> KeyPackageStorageAdapter<S> {
-//     pub fn new(keypackage_storage: S) -> KeyPackageStorageAdapter<S> {
-//         Self(Mutex::new(keypackage_storage))
-//     }
+impl<S> KeyPackageStorageAdapter<S> {
+    pub fn new(keypackage_storage: S) -> KeyPackageStorageAdapter<S> {
+        Self(Mutex::new(keypackage_storage))
+    }
 
-//     fn inner(&self) -> std::sync::MutexGuard<'_, S> {
-//         self.0.lock().unwrap()
-//     }
-// }
+    fn inner(&self) -> std::sync::MutexGuard<'_, S> {
+        self.0.lock().unwrap()
+    }
+}
 
-// #[maybe_async::must_be_sync]
-// impl<S, Err> KeyPackageStorageFfi for KeyPackageStorageAdapter<S>
-// where
-//     S: mls_rs::KeyPackageStorage<Error = Err> + Debug,
-//     Err: IntoAnyError,
-// {
-//     async fn delete(&self, id: Vec<u8>) -> Result<(), MlSrsError> {
-//         self.inner()
-//             .await
-//             .delete(&id)
-//             .await
-//             .map_err(|err| err.into_any_error().into() )
-//     }
+#[maybe_async::must_be_sync]
+impl<S, Err> KeyPackageStorageProtocol for KeyPackageStorageAdapter<S>
+where
+    S: mls_rs::KeyPackageStorage<Error = Err> + Debug,
+    Err: IntoAnyError,
+{
+    async fn delete(&self, id: Vec<u8>) -> Result<(), MlSrsError> {
+        self.inner()
+            .await
+            .delete(&id)
+            .await
+            .map_err(|err| err.into_any_error().into())
+    }
 
-//     async fn insert(&self, id: Vec<u8>, pkg: KeyPackageData) -> Result<(), MlSrsError> {
-//         self.inner()
-//             .await
-//             .insert(id, mls_rs::storage_provider::KeyPackageData::from(pkg))
-//             .await
-//             .map_err(|err| err.into_any_error().into() )
-//     }
+    async fn insert(&self, id: Vec<u8>, pkg: KeyPackageDataFFI) -> Result<(), MlSrsError> {
+        self.inner()
+            .await
+            .insert(id, mls_rs::storage_provider::KeyPackageData::from(pkg))
+            .await
+            .map_err(|err| err.into_any_error().into())
+    }
 
-//     async fn get(&self, id: Vec<u8>) -> Result<Option<KeyPackageData>, MlSrsError> {
-//         self.inner()
-//             .await
-//             .get(&id)
-//             .map(|option| option.map(|result| result.into()) )
-//             .await
-//             .map_err(|err| err.into_any_error().into() )
-//     }
-// }
+    async fn get(&self, id: Vec<u8>) -> Result<Option<KeyPackageDataFFI>, MlSrsError> {
+        self.inner()
+            .await
+            .get(&id)
+            .map(|option| option.map(|result| result.into()))
+            .await
+            .map_err(|err| err.into_any_error().into())
+    }
+}
 
 // //MARK: Group Storage
 

@@ -12,17 +12,17 @@ use std::sync::Arc;
 
 // use mls_rs_crypto_cryptokit::CryptoKitProvider;
 
-use self::group_state::KeyPackageStorageFfi;
+use self::group_state::KeyPackageStorageProtocol;
 // use self::group_state::{KeyPackageStorageFfi, GroupStateStorage, GroupStateStorageAdapter, KeyPackageStorageAdapter};
 // use crate::MlSrsError;
 
 pub mod group_state;
 
 #[derive(Debug, Clone)]
-pub(crate) struct ClientKeyPackageStorage(Arc<dyn KeyPackageStorageFfi>);
+pub(crate) struct ClientKeyPackageStorage(Arc<dyn KeyPackageStorageProtocol>);
 
-impl From<Arc<dyn KeyPackageStorageFfi>> for ClientKeyPackageStorage {
-    fn from(value: Arc<dyn KeyPackageStorageFfi>) -> Self {
+impl From<Arc<dyn KeyPackageStorageProtocol>> for ClientKeyPackageStorage {
+    fn from(value: Arc<dyn KeyPackageStorageProtocol>) -> Self {
         Self(value)
     }
 }

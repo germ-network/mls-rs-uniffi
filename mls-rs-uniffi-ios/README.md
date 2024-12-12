@@ -27,7 +27,7 @@ cargo build
 2. Generate the bindings 
 ```
 cargo run -p uniffi-bindgen --bin uniffi-bindgen \
-	generate --library ../target/debug/libmls_rs_uniffi_ios.dylib --language swift \
+	generate --library ./target/debug/libmls_rs_uniffi_ios.dylib --language swift \
 	--out-dir ./bindings
 ```
 
