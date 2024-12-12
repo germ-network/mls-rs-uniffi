@@ -12,35 +12,43 @@ pub struct KeyPackageData {
     pub expiration: u64,
 }
 
-// impl From<mls_rs_core::key_package::KeyPackageData> for KeyPackageData {
-//     fn from(mls_rs_core::key_package::KeyPackageData {
-//         key_package_bytes,
-//         init_key,
-//         leaf_node_key,
-//         expiration, .. }: mls_rs_core::key_package::KeyPackageData ) -> Self {
-//         Self {
-//             key_package_bytes: key_package_bytes,
-//             init_key_data: init_key.as_ref().to_vec(),
-//             leaf_node_key_data: leaf_node_key.as_ref().to_vec(),
-//             expiration: expiration,
-//         }
-//     }
-// }
+impl From<mls_rs_core::key_package::KeyPackageData> for KeyPackageData {
+    fn from(
+        mls_rs_core::key_package::KeyPackageData {
+            key_package_bytes,
+            init_key,
+            leaf_node_key,
+            expiration,
+            ..
+        }: mls_rs_core::key_package::KeyPackageData,
+    ) -> Self {
+        Self {
+            key_package_bytes: key_package_bytes,
+            init_key_data: init_key.as_ref().to_vec(),
+            leaf_node_key_data: leaf_node_key.as_ref().to_vec(),
+            expiration: expiration,
+        }
+    }
+}
 
-// impl From<KeyPackageData> for mls_rs_core::key_package::KeyPackageData {
-//     fn from(KeyPackageData {
-//         key_package_bytes,
-//         init_key_data,
-//         leaf_node_key_data,
-//         expiration, .. }: KeyPackageData ) -> Self {
-//         mls_rs_core::key_package::KeyPackageData::new(
-//             key_package_bytes,
-//             mls_rs_core::crypto::HpkeSecretKey::from(init_key_data),
-//             mls_rs_core::crypto::HpkeSecretKey::from(leaf_node_key_data),
-//             expiration
-//         )
-//     }
-// }
+impl From<KeyPackageData> for mls_rs_core::key_package::KeyPackageData {
+    fn from(
+        KeyPackageData {
+            key_package_bytes,
+            init_key_data,
+            leaf_node_key_data,
+            expiration,
+            ..
+        }: KeyPackageData,
+    ) -> Self {
+        mls_rs_core::key_package::KeyPackageData::new(
+            key_package_bytes,
+            mls_rs_core::crypto::HpkeSecretKey::from(init_key_data),
+            mls_rs_core::crypto::HpkeSecretKey::from(leaf_node_key_data),
+            expiration,
+        )
+    }
+}
 
 #[maybe_async::must_be_sync]
 #[uniffi::export(with_foreign)]
