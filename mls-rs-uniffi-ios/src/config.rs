@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use mls_rs::{
     client_builder::{self, WithGroupStateStorage, WithKeyPackageRepo},
-    //     error::MlsError,
+    error::MlsError,
     //     storage_provider::in_memory::InMemoryKeyPackageStorage,
     //     storage_provider::in_memory::InMemoryGroupStateStorage,
     //     time::MlsTime
@@ -112,16 +112,18 @@ pub type UniFFIConfig = client_builder::WithIdentityProvider<
     >,
 >;
 
-// #[derive(Debug, Clone, uniffi::Record)]
-// pub struct ClientConfig {
-//     pub client_keypackage_storage: Arc<dyn KeyPackageStorageFfi>,
-//     pub group_state_storage: Arc<dyn GroupStateStorage>,
-//     pub identity_provider_storage: Arc<dyn IdentityProviderFFI>,
-//     /// Use the ratchet tree extension. If this is false, then you
-//     /// must supply `ratchet_tree` out of band to clients.
-//     pub use_ratchet_tree_extension: bool,
-// }
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct ClientConfig {
+    pub client_keypackage_storage: Arc<dyn KeyPackageStorageProtocol>,
+    pub group_state_storage: Arc<dyn GroupStateStorageProtocol>,
+    pub identity_provider_storage: Arc<dyn IdentityProviderProtocol>,
+    /// Use the ratchet tree extension. If this is false, then you
+    /// must supply `ratchet_tree` out of band to clients.
+    pub use_ratchet_tree_extension: bool,
+}
 
+//Having trouble bridging internal storage implementations through an adapter
+//so we are omitting that bridge for now
 // impl Default for ClientConfig {
 //     fn default() -> Self {
 //         Self {
@@ -145,34 +147,33 @@ pub type UniFFIConfig = client_builder::WithIdentityProvider<
 //     ClientConfig::default()
 // }
 
-// /// Supported cipher suites.
-// ///
-// /// This is a subset of the cipher suites found in
-// /// [`mls_rs::CipherSuite`].
-// #[derive(Copy, Clone, Debug, uniffi::Enum)]
-// pub enum CipherSuite {
-//     // TODO(mgeisler): add more cipher suites.
-//     Curve25519ChaCha,
-// }
+/// Supported cipher suites.
+///
+/// This is a subset of the cipher suites found in
+/// [`mls_rs::CipherSuite`].
+#[derive(Copy, Clone, Debug, uniffi::Enum)]
+pub enum CipherSuiteFFI {
+    Curve25519ChaCha,
+}
 
-// impl From<CipherSuite> for mls_rs::CipherSuite {
-//     fn from(cipher_suite: CipherSuite) -> mls_rs::CipherSuite {
-//         match cipher_suite {
-//             CipherSuite::Curve25519ChaCha => mls_rs::CipherSuite::CURVE25519_CHACHA,
-//         }
-//     }
-// }
+impl From<CipherSuiteFFI> for mls_rs::CipherSuite {
+    fn from(cipher_suite: CipherSuiteFFI) -> mls_rs::CipherSuite {
+        match cipher_suite {
+            CipherSuiteFFI::Curve25519ChaCha => mls_rs::CipherSuite::CURVE25519_CHACHA,
+        }
+    }
+}
 
-// impl TryFrom<mls_rs::CipherSuite> for CipherSuite {
-//     type Error = MlSrsError;
+impl TryFrom<mls_rs::CipherSuite> for CipherSuiteFFI {
+    type Error = MlSrsError;
 
-//     fn try_from(cipher_suite: mls_rs::CipherSuite) -> Result<Self, Self::Error> {
-//         match cipher_suite {
-//             mls_rs::CipherSuite::CURVE25519_CHACHA => Ok(CipherSuite::Curve25519ChaCha),
-//             _ => Err(MlsError::UnsupportedCipherSuite(cipher_suite))?,
-//         }
-//     }
-// }
+    fn try_from(cipher_suite: mls_rs::CipherSuite) -> Result<Self, Self::Error> {
+        match cipher_suite {
+            mls_rs::CipherSuite::CURVE25519_CHACHA => Ok(CipherSuiteFFI::Curve25519ChaCha),
+            _ => Err(MlsError::UnsupportedCipherSuite(cipher_suite))?,
+        }
+    }
+}
 
 // /// Adapt an IdentityProvider
 // /// The default BasicCredential Identity Provider asserts identity equality
