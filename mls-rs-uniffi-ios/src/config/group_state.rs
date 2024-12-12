@@ -78,55 +78,55 @@ pub trait KeyPackageStorageProtocol: Send + Sync + Debug {
     async fn get(&self, id: Vec<u8>) -> Result<Option<KeyPackageDataFFI>, MlSrsError>;
 }
 
-// /// Adapt a mls-rs `KeyPackageStorage` implementation.
-// ///
-// /// This is used to adapt a mls-rs `KeyPackageStorage` implementation
-// /// to our own `KeyPackageStorage` trait. This way we can use any
-// /// standard mls-rs group state storage from the FFI layer.
-// #[derive(Debug)]
-// pub(crate) struct KeyPackageStorageAdapter<S>(Mutex<S>);
+/// Adapt a mls-rs `KeyPackageStorage` implementation.
+///
+/// This is used to adapt a mls-rs `KeyPackageStorage` implementation
+/// to our own `KeyPackageStorage` trait. This way we can use any
+/// standard mls-rs group state storage from the FFI layer.
+#[derive(Debug)]
+pub(crate) struct KeyPackageStorageAdapter<S>(Mutex<S>);
 
-// impl<S> KeyPackageStorageAdapter<S> {
-//     pub fn new(keypackage_storage: S) -> KeyPackageStorageAdapter<S> {
-//         Self(Mutex::new(keypackage_storage))
-//     }
+impl<S> KeyPackageStorageAdapter<S> {
+    pub fn new(keypackage_storage: S) -> KeyPackageStorageAdapter<S> {
+        Self(Mutex::new(keypackage_storage))
+    }
 
-//     fn inner(&self) -> std::sync::MutexGuard<'_, S> {
-//         self.0.lock().unwrap()
-//     }
-// }
+    fn inner(&self) -> std::sync::MutexGuard<'_, S> {
+        self.0.lock().unwrap()
+    }
+}
 
-// #[maybe_async::must_be_sync]
-// impl<S, Err> KeyPackageStorageProtocol for KeyPackageStorageAdapter<S>
-// where
-//     S: mls_rs::KeyPackageStorage<Error = Err> + Debug,
-//     Err: IntoAnyError,
-// {
-//     async fn delete(&self, id: Vec<u8>) -> Result<(), MlSrsError> {
-//         self.inner()
-//             .await
-//             .delete(&id)
-//             .await
-//             .map_err(|err| err.into_any_error().into())
-//     }
+#[maybe_async::must_be_sync]
+impl<S, Err> KeyPackageStorageProtocol for KeyPackageStorageAdapter<S>
+where
+    S: mls_rs::KeyPackageStorage<Error = Err> + Debug,
+    Err: IntoAnyError,
+{
+    async fn delete(&self, id: Vec<u8>) -> Result<(), MlSrsError> {
+        self.inner()
+            .await
+            .delete(&id)
+            .await
+            .map_err(|err| err.into_any_error().into())
+    }
 
-//     async fn insert(&self, id: Vec<u8>, pkg: KeyPackageDataFFI) -> Result<(), MlSrsError> {
-//         self.inner()
-//             .await
-//             .insert(id, mls_rs::storage_provider::KeyPackageData::from(pkg))
-//             .await
-//             .map_err(|err| err.into_any_error().into())
-//     }
+    async fn insert(&self, id: Vec<u8>, pkg: KeyPackageDataFFI) -> Result<(), MlSrsError> {
+        self.inner()
+            .await
+            .insert(id, mls_rs::storage_provider::KeyPackageData::from(pkg))
+            .await
+            .map_err(|err| err.into_any_error().into())
+    }
 
-//     async fn get(&self, id: Vec<u8>) -> Result<Option<KeyPackageDataFFI>, MlSrsError> {
-//         self.inner()
-//             .await
-//             .get(&id)
-//             .map(|option| option.map(|result| result.into()))
-//             .await
-//             .map_err(|err| err.into_any_error().into())
-//     }
-// }
+    async fn get(&self, id: Vec<u8>) -> Result<Option<KeyPackageDataFFI>, MlSrsError> {
+        self.inner()
+            .await
+            .get(&id)
+            .map(|option| option.map(|result| result.into()))
+            .await
+            .map_err(|err| err.into_any_error().into())
+    }
+}
 
 //MARK: Group Storage
 
@@ -175,69 +175,69 @@ pub trait GroupStateStorageProtocol: Send + Sync + Debug {
     async fn max_epoch_id(&self, group_id: Vec<u8>) -> Result<Option<u64>, MlSrsError>;
 }
 
-// /// Adapt a mls-rs `GroupStateStorage` implementation.
-// ///
-// /// This is used to adapt a mls-rs `GroupStateStorage` implementation
-// /// to our own `GroupStateStorage` trait. This way we can use any
-// /// standard mls-rs group state storage from the FFI layer.
-// #[derive(Debug)]
-// pub(crate) struct GroupStateStorageAdapter<S>(Mutex<S>);
+/// Adapt a mls-rs `GroupStateStorage` implementation.
+///
+/// This is used to adapt a mls-rs `GroupStateStorage` implementation
+/// to our own `GroupStateStorage` trait. This way we can use any
+/// standard mls-rs group state storage from the FFI layer.
+#[derive(Debug)]
+pub(crate) struct GroupStateStorageAdapter<S>(Mutex<S>);
 
-// impl<S> GroupStateStorageAdapter<S> {
-//     pub fn new(group_state_storage: S) -> GroupStateStorageAdapter<S> {
-//         Self(Mutex::new(group_state_storage))
-//     }
+impl<S> GroupStateStorageAdapter<S> {
+    pub fn new(group_state_storage: S) -> GroupStateStorageAdapter<S> {
+        Self(Mutex::new(group_state_storage))
+    }
 
-//     fn inner(&self) -> std::sync::MutexGuard<'_, S> {
-//         self.0.lock().unwrap()
-//     }
-// }
+    fn inner(&self) -> std::sync::MutexGuard<'_, S> {
+        self.0.lock().unwrap()
+    }
+}
 
-// #[maybe_async::must_be_sync]
-// impl<S, Err> GroupStateStorageProtocol for GroupStateStorageAdapter<S>
-// where
-//     S: mls_rs::GroupStateStorage<Error = Err> + Debug,
-//     Err: IntoAnyError,
-// {
-//     async fn state(&self, group_id: Vec<u8>) -> Result<Option<Vec<u8>>, MlSrsError> {
-//         self.inner()
-//             .await
-//             .state(&group_id)
-//             .await
-//             .map_err(|err| err.into_any_error().into())
-//     }
+#[maybe_async::must_be_sync]
+impl<S, Err> GroupStateStorageProtocol for GroupStateStorageAdapter<S>
+where
+    S: mls_rs::GroupStateStorage<Error = Err> + Debug,
+    Err: IntoAnyError,
+{
+    async fn state(&self, group_id: Vec<u8>) -> Result<Option<Vec<u8>>, MlSrsError> {
+        self.inner()
+            .await
+            .state(&group_id)
+            .await
+            .map_err(|err| err.into_any_error().into())
+    }
 
-//     async fn epoch(&self, group_id: Vec<u8>, epoch_id: u64) -> Result<Option<Vec<u8>>, MlSrsError> {
-//         self.inner()
-//             .await
-//             .epoch(&group_id, epoch_id)
-//             .await
-//             .map_err(|err| err.into_any_error().into())
-//     }
+    async fn epoch(&self, group_id: Vec<u8>, epoch_id: u64) -> Result<Option<Vec<u8>>, MlSrsError> {
+        self.inner()
+            .await
+            .epoch(&group_id, epoch_id)
+            .await
+            .map_err(|err| err.into_any_error().into())
+    }
 
-//     async fn write(
-//         &self,
-//         id: Vec<u8>,
-//         data: Vec<u8>,
-//         epoch_inserts: Vec<EpochRecordFFI>,
-//         epoch_updates: Vec<EpochRecordFFI>,
-//     ) -> Result<(), MlSrsError> {
-//         self.inner()
-//             .await
-//             .write(
-//                 mls_rs_core::group::GroupState { id, data }.into(),
-//                 epoch_inserts.into_iter().map(Into::into).collect(),
-//                 epoch_updates.into_iter().map(Into::into).collect(),
-//             )
-//             .await
-//             .map_err(|err| err.into_any_error().into())
-//     }
+    async fn write(
+        &self,
+        id: Vec<u8>,
+        data: Vec<u8>,
+        epoch_inserts: Vec<EpochRecordFFI>,
+        epoch_updates: Vec<EpochRecordFFI>,
+    ) -> Result<(), MlSrsError> {
+        self.inner()
+            .await
+            .write(
+                mls_rs_core::group::GroupState { id, data }.into(),
+                epoch_inserts.into_iter().map(Into::into).collect(),
+                epoch_updates.into_iter().map(Into::into).collect(),
+            )
+            .await
+            .map_err(|err| err.into_any_error().into())
+    }
 
-//     async fn max_epoch_id(&self, group_id: Vec<u8>) -> Result<Option<u64>, MlSrsError> {
-//         self.inner()
-//             .await
-//             .max_epoch_id(&group_id)
-//             .await
-//             .map_err(|err| err.into_any_error().into())
-//     }
-// }
+    async fn max_epoch_id(&self, group_id: Vec<u8>) -> Result<Option<u64>, MlSrsError> {
+        self.inner()
+            .await
+            .max_epoch_id(&group_id)
+            .await
+            .map_err(|err| err.into_any_error().into())
+    }
+}
