@@ -5,16 +5,19 @@ use std::sync::Arc;
 use mls_rs::{
     client_builder::{self, WithGroupStateStorage, WithKeyPackageRepo},
     error::MlsError,
-    //     storage_provider::in_memory::InMemoryKeyPackageStorage,
-    //     storage_provider::in_memory::InMemoryGroupStateStorage,
-    //     time::MlsTime
+    storage_provider::in_memory::InMemoryGroupStateStorage,
+    storage_provider::in_memory::InMemoryKeyPackageStorage,
+    time::MlsTime,
 };
 
 use mls_rs_core::key_package::KeyPackageData;
 
 use mls_rs_crypto_cryptokit::CryptoKitProvider;
 
-use self::group_state::{GroupStateStorageProtocol, KeyPackageStorageProtocol};
+use self::group_state::{
+    GroupStateStorageAdapter, GroupStateStorageProtocol, KeyPackageStorageAdapter,
+    KeyPackageStorageProtocol,
+};
 // use self::group_state::{KeyPackageStorageFfi, GroupStateStorage, GroupStateStorageAdapter, KeyPackageStorageAdapter};
 use crate::MlSrsError;
 
@@ -122,30 +125,28 @@ pub struct ClientConfig {
     pub use_ratchet_tree_extension: bool,
 }
 
-//Having trouble bridging internal storage implementations through an adapter
-//so we are omitting that bridge for now
-// impl Default for ClientConfig {
-//     fn default() -> Self {
-//         Self {
-//             client_keypackage_storage: Arc::new(
-//                 KeyPackageStorageAdapter::new(InMemoryKeyPackageStorage::new())
-//                 ),
-//             group_state_storage: Arc::new(GroupStateStorageAdapter::new(
-//                 InMemoryGroupStateStorage::new(),
-//             )),
-//             identity_provider_storage: Arc::new(BasicIdentityProviderShim::new()),
-//             use_ratchet_tree_extension: true,
-//         }
-//     }
-// }
+impl Default for ClientConfig {
+    fn default() -> Self {
+        Self {
+            client_keypackage_storage: Arc::new(KeyPackageStorageAdapter::new(
+                InMemoryKeyPackageStorage::new(),
+            )),
+            group_state_storage: Arc::new(GroupStateStorageAdapter::new(
+                InMemoryGroupStateStorage::new(),
+            )),
+            identity_provider_storage: Arc::new(BasicIdentityProviderShim::new()),
+            use_ratchet_tree_extension: true,
+        }
+    }
+}
 
-// // TODO(mgeisler): turn into an associated function when UniFFI
-// // supports them: https://github.com/mozilla/uniffi-rs/issues/1074.
-// /// Create a client config with an in-memory group state storage.
-// #[uniffi::export]
-// pub fn client_config_default() -> ClientConfig {
-//     ClientConfig::default()
-// }
+// TODO(mgeisler): turn into an associated function when UniFFI
+// supports them: https://github.com/mozilla/uniffi-rs/issues/1074.
+/// Create a client config with an in-memory group state storage.
+#[uniffi::export]
+pub fn client_config_default() -> ClientConfig {
+    ClientConfig::default()
+}
 
 /// Supported cipher suites.
 ///
@@ -239,33 +240,33 @@ impl From<SignaturePublicKeyFFI> for mls_rs::crypto::SignaturePublicKey {
     }
 }
 
-// /// A [`mls_rs::crypto::SignatureSecretKey`] wrapper.
-// #[derive(Clone, Debug, uniffi::Record)]
-// pub struct SignatureSecretKey {
-//     pub bytes: Vec<u8>,
-// }
+/// A [`mls_rs::crypto::SignatureSecretKey`] wrapper.
+#[derive(Clone, Debug, uniffi::Record)]
+pub struct SignatureSecretKeyFFI {
+    pub bytes: Vec<u8>,
+}
 
-// impl From<mls_rs::crypto::SignatureSecretKey> for SignatureSecretKey {
-//     fn from(secret_key: mls_rs::crypto::SignatureSecretKey) -> Self {
-//         Self {
-//             bytes: secret_key.as_bytes().to_vec(),
-//         }
-//     }
-// }
+impl From<mls_rs::crypto::SignatureSecretKey> for SignatureSecretKeyFFI {
+    fn from(secret_key: mls_rs::crypto::SignatureSecretKey) -> Self {
+        Self {
+            bytes: secret_key.as_bytes().to_vec(),
+        }
+    }
+}
 
-// impl From<SignatureSecretKey> for mls_rs::crypto::SignatureSecretKey {
-//     fn from(secret_key: SignatureSecretKey) -> Self {
-//         Self::new(secret_key.bytes)
-//     }
-// }
+impl From<SignatureSecretKeyFFI> for mls_rs::crypto::SignatureSecretKey {
+    fn from(secret_key: SignatureSecretKeyFFI) -> Self {
+        Self::new(secret_key.bytes)
+    }
+}
 
-// /// A ([`SignaturePublicKey`], [`SignatureSecretKey`]) pair.
-// #[derive(uniffi::Record, Clone, Debug)]
-// pub struct SignatureKeypair {
-//     pub cipher_suite: CipherSuite,
-//     pub public_key: SignaturePublicKey,
-//     pub secret_key: SignatureSecretKey,
-// }
+/// A ([`SignaturePublicKey`], [`SignatureSecretKey`]) pair.
+#[derive(uniffi::Record, Clone, Debug)]
+pub struct SignatureKeypairFFI {
+    pub cipher_suite: CipherSuiteFFI,
+    pub public_key: SignaturePublicKeyFFI,
+    pub secret_key: SignatureSecretKeyFFI,
+}
 
 /// A [`mls_rs::ExtensionList`] wrapper.
 #[derive(uniffi::Object, Debug, Clone)]
@@ -279,17 +280,17 @@ impl From<mls_rs::ExtensionList> for ExtensionListFFI {
     }
 }
 
-// /// A [`mls_rs::Extension`] wrapper.
-// #[derive(uniffi::Object, Debug, Clone)]
-// pub struct Extension {
-//     _inner: mls_rs::Extension,
-// }
+/// A [`mls_rs::Extension`] wrapper.
+#[derive(uniffi::Object, Debug, Clone)]
+pub struct ExtensionFFI {
+    _inner: mls_rs::Extension,
+}
 
-// impl From<mls_rs::Extension> for Extension {
-//     fn from(inner: mls_rs::Extension) -> Self {
-//         Self { _inner: inner }
-//     }
-// }
+impl From<mls_rs::Extension> for ExtensionFFI {
+    fn from(inner: mls_rs::Extension) -> Self {
+        Self { _inner: inner }
+    }
+}
 
 /// Identity system that can be used to validate a
 /// [`SigningIdentity`](mls-rs-core::identity::SigningIdentity)
@@ -357,8 +358,7 @@ impl From<Arc<dyn IdentityProviderProtocol>> for IdentityProviderStorage {
     }
 }
 
-// #[cfg_attr(not(mls_build_async), maybe_async::must_be_sync)]
-// #[cfg_attr(mls_build_async, maybe_async::must_be_async)]
+// #[maybe_async::must_be_sync]
 // impl mls_rs_core::identity::IdentityProvider for IdentityProviderStorage {
 //     type Error = MlSrsError;
 
@@ -436,59 +436,58 @@ impl From<Arc<dyn IdentityProviderProtocol>> for IdentityProviderStorage {
 //     }
 // }
 
-// //Instead of an adapter, just a simple default shim
-// #[derive (Debug)]
-// struct BasicIdentityProviderShim {}
+//Instead of an adapter, just a simple default shim
+#[derive(Debug)]
+struct BasicIdentityProviderShim {}
 
-// impl BasicIdentityProviderShim {
-//     fn new() -> Self {
-//         Self {}
-//     }
-// }
+impl BasicIdentityProviderShim {
+    fn new() -> Self {
+        Self {}
+    }
+}
 
-// impl IdentityProviderFFI for BasicIdentityProviderShim {
+impl IdentityProviderProtocol for BasicIdentityProviderShim {
+    fn validate_member(
+        &self,
+        _: Arc<SigningIdentityFFI>,
+        _: Option<u64>,
+        _: Option<Arc<ExtensionListFFI>>,
+    ) -> Result<(), MlSrsError> {
+        Ok(())
+    }
 
-//     fn validate_member(
-//         &self,
-//         _: Arc<SigningIdentity>,
-//         _: Option<u64>,
-//         _: Option<Arc<ExtensionList>>,
-//     ) -> Result<(), MlSrsError> {
-//         Ok(())
-//     }
+    fn validate_external_sender(
+        &self,
+        _: Arc<SigningIdentityFFI>,
+        _: Option<u64>,
+        _: Option<Arc<ExtensionListFFI>>,
+    ) -> Result<(), MlSrsError> {
+        Ok(())
+    }
 
-//     fn validate_external_sender(
-//         &self,
-//         _: Arc<SigningIdentity>,
-//         _: Option<u64>,
-//         _: Option<Arc<ExtensionList>>,
-//     ) -> Result<(), MlSrsError> {
-//         Ok(())
-//     }
+    fn identity(
+        &self,
+        signing_identity: Arc<SigningIdentityFFI>,
+        _: Arc<ExtensionListFFI>,
+    ) -> Result<Vec<u8>, MlSrsError> {
+        let credential = signing_identity.basic_credential();
+        match credential {
+            Some(credential) => Ok(credential),
+            None => Err(MlSrsError::MissingBasicCredential),
+        }
+    }
 
-//     fn identity(
-//         &self,
-//         signing_identity: Arc<SigningIdentity>,
-//         _: Arc<ExtensionList>,
-//     ) -> Result<Vec<u8>, MlSrsError> {
-//         let credential = signing_identity.basic_credential();
-//         match credential {
-//             Some(credential) => Ok(credential),
-//             None => Err(MlSrsError::MissingBasicCredential)
-//         }
-//     }
+    fn valid_successor(
+        &self,
+        _: Arc<SigningIdentityFFI>,
+        _: Arc<SigningIdentityFFI>,
+        _: Arc<ExtensionListFFI>,
+    ) -> Result<bool, MlSrsError> {
+        Ok(true)
+    }
 
-//     fn valid_successor(
-//         &self,
-//         _: Arc<SigningIdentity>,
-//         _: Arc<SigningIdentity>,
-//         _: Arc<ExtensionList>,
-//     ) -> Result<bool, MlSrsError> {
-//         Ok(true)
-//     }
-
-//     /// Credential types that are supported by this provider.
-//     fn supported_types(&self) -> Vec<u16> {
-//         vec![1]
-//     }
-// }
+    /// Credential types that are supported by this provider.
+    fn supported_types(&self) -> Vec<u16> {
+        vec![1]
+    }
+}
