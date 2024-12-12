@@ -10,11 +10,13 @@ use std::sync::Arc;
 //     time::MlsTime
 // };
 
+use mls_rs_core::key_package::KeyPackageData;
+
 // use mls_rs_crypto_cryptokit::CryptoKitProvider;
 
 use self::group_state::KeyPackageStorageProtocol;
 // use self::group_state::{KeyPackageStorageFfi, GroupStateStorage, GroupStateStorageAdapter, KeyPackageStorageAdapter};
-// use crate::MlSrsError;
+use crate::MlSrsError;
 
 pub mod group_state;
 
@@ -27,30 +29,29 @@ impl From<Arc<dyn KeyPackageStorageProtocol>> for ClientKeyPackageStorage {
     }
 }
 
-// #[cfg_attr(not(mls_build_async), maybe_async::must_be_sync)]
-// #[cfg_attr(mls_build_async, maybe_async::must_be_async)]
-// impl mls_rs_core::key_package::KeyPackageStorage for ClientKeyPackageStorage {
-//     type Error = MlSrsError;
+#[maybe_async::must_be_sync]
+impl mls_rs_core::key_package::KeyPackageStorage for ClientKeyPackageStorage {
+    type Error = MlSrsError;
 
-//     async fn delete(&mut self, id: &[u8]) -> Result<(), Self::Error> {
-//         self.0.delete(id.to_vec().await)
-//     }
+    async fn delete(&mut self, id: &[u8]) -> Result<(), Self::Error> {
+        self.0.delete(id.to_vec().await)
+    }
 
-//     /// Store [`KeyPackageData`] that can be accessed by `id` in the future.
-//     ///
-//     /// This function is automatically called whenever a new key package is created.
-//     async fn insert(&mut self, id: Vec<u8>, pkg: mls_rs_core::key_package::KeyPackageData) -> Result<(), Self::Error> {
-//         self.0.insert(id, pkg.into()).await
-//     }
+    /// Store [`KeyPackageData`] that can be accessed by `id` in the future.
+    ///
+    /// This function is automatically called whenever a new key package is created.
+    async fn insert(&mut self, id: Vec<u8>, pkg: mls_rs_core::key_package::KeyPackageData) -> Result<(), Self::Error> {
+        self.0.insert(id, pkg.into()).await
+    }
 
-//     /// Retrieve [`KeyPackageData`] by its `id`.
-//     ///
-//     /// `None` should be returned in the event that no key packages are found
-//     /// that match `id`.
-//     async fn get(&self, id: &[u8]) -> Result<Option<mls_rs_core::key_package::KeyPackageData>, Self::Error> {
-//         self.0.get(id.to_vec()).map(|result| result.map(|option| option.into() ) )
-//     }
-// }
+    /// Retrieve [`KeyPackageData`] by its `id`.
+    ///
+    /// `None` should be returned in the event that no key packages are found
+    /// that match `id`.
+    async fn get(&self, id: &[u8]) -> Result<Option<KeyPackageData>, Self::Error> {
+        self.0.get(id.to_vec()).map(|result| result.map(|option| option.into() ) )
+    }
+}
 
 // #[derive(Debug, Clone)]
 // pub(crate) struct ClientGroupStorage(Arc<dyn GroupStateStorage>);

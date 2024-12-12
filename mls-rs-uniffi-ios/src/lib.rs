@@ -26,7 +26,7 @@ use std::sync::Arc;
 
 use std::sync::Mutex;
 
-use mls_rs::error::IntoAnyError;
+use mls_rs_core::error::IntoAnyError;
 use mls_rs::group;
 use mls_rs::identity::basic;
 use mls_rs::mls_rs_codec::MlsDecode;
