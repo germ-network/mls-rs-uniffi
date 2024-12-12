@@ -292,6 +292,17 @@ impl From<mls_rs::Extension> for ExtensionFFI {
     }
 }
 
+// /// A [`mls_rs_core::identity::MemberValidationContext`]
+// pub enum MemberValidationContextFFI {
+//     ForCommit GroupContext,
+//         new_extensions: ExtensionFFI,
+//     },
+//     ForNewGroup {
+//         current_context: GroupContext,
+//     },
+//     None,
+// }
+
 /// Identity system that can be used to validate a
 /// [`SigningIdentity`](mls-rs-core::identity::SigningIdentity)
 #[maybe_async::must_be_sync]
