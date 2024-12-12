@@ -191,53 +191,53 @@ impl From<identity::SigningIdentity> for SigningIdentityFFI {
     }
 }
 
-// #[cfg_attr(not(mls_build_async), maybe_async::must_be_sync)]
-// #[cfg_attr(mls_build_async, maybe_async::must_be_async)]
-// #[uniffi::export]
-// impl SigningIdentity {
-//     #[uniffi::constructor]
-//     pub fn new(
-//         signature_key_data: Vec<u8>,
-//         basic_credential: Vec<u8>,
-//     ) -> Result<Self, MlSrsError> {
-//         let signing_identity = identity::SigningIdentity::new(
-//             identity::Credential::Basic(identity::BasicCredential{identifier: basic_credential}),
-//             signature_key_data.into(),
-//         );
-//         Ok( signing_identity.into() )
-//     }
+#[maybe_async::must_be_sync]
+#[uniffi::export]
+impl SigningIdentityFFI {
+    #[uniffi::constructor]
+    pub fn new(signature_key_data: Vec<u8>, basic_credential: Vec<u8>) -> Result<Self, MlSrsError> {
+        let signing_identity = identity::SigningIdentity::new(
+            identity::Credential::Basic(identity::BasicCredential {
+                identifier: basic_credential,
+            }),
+            signature_key_data.into(),
+        );
+        Ok(signing_identity.into())
+    }
 
-//     pub fn basic_credential(&self) -> Option<Vec<u8>> {
-//         match self.clone().inner.credential {
-//             mls_rs::identity::Credential::Basic(basic_credential) => Some(basic_credential.identifier),
-//             _ => None
-//         }
-//     }
+    pub fn basic_credential(&self) -> Option<Vec<u8>> {
+        match self.clone().inner.credential {
+            mls_rs::identity::Credential::Basic(basic_credential) => {
+                Some(basic_credential.identifier)
+            }
+            _ => None,
+        }
+    }
 
-//     pub fn node_signing_key(&self) -> SignaturePublicKey {
-//         self.inner.signature_key.clone().into()
-//     }
-// }
+    pub fn node_signing_key(&self) -> SignaturePublicKeyFFI {
+        self.inner.signature_key.clone().into()
+    }
+}
 
-// /// A [`mls_rs::crypto::SignaturePublicKey`] wrapper.
-// #[derive(Clone, Debug, uniffi::Record)]
-// pub struct SignaturePublicKey {
-//     pub bytes: Vec<u8>,
-// }
+/// A [`mls_rs::crypto::SignaturePublicKey`] wrapper.
+#[derive(Clone, Debug, uniffi::Record)]
+pub struct SignaturePublicKeyFFI {
+    pub bytes: Vec<u8>,
+}
 
-// impl From<mls_rs::crypto::SignaturePublicKey> for SignaturePublicKey {
-//     fn from(public_key: mls_rs::crypto::SignaturePublicKey) -> Self {
-//         Self {
-//             bytes: public_key.to_vec(),
-//         }
-//     }
-// }
+impl From<mls_rs::crypto::SignaturePublicKey> for SignaturePublicKeyFFI {
+    fn from(public_key: mls_rs::crypto::SignaturePublicKey) -> Self {
+        Self {
+            bytes: public_key.to_vec(),
+        }
+    }
+}
 
-// impl From<SignaturePublicKey> for mls_rs::crypto::SignaturePublicKey {
-//     fn from(public_key: SignaturePublicKey) -> Self {
-//         Self::new(public_key.bytes)
-//     }
-// }
+impl From<SignaturePublicKeyFFI> for mls_rs::crypto::SignaturePublicKey {
+    fn from(public_key: SignaturePublicKeyFFI) -> Self {
+        Self::new(public_key.bytes)
+    }
+}
 
 // /// A [`mls_rs::crypto::SignatureSecretKey`] wrapper.
 // #[derive(Clone, Debug, uniffi::Record)]
