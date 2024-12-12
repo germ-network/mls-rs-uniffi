@@ -1,4 +1,6 @@
 use mls_rs::error::IntoAnyError;
+use mls_rs_core::group::EpochRecord;
+
 use std::fmt::Debug;
 use std::sync::Mutex;
 
@@ -126,52 +128,52 @@ where
     }
 }
 
-// //MARK: Group Storage
+//MARK: Group Storage
 
-// // TODO(mulmarta): we'd like to use EpochRecord from mls-rs-core but
-// // this breaks the Python tests because using two crates makes UniFFI
-// // generate a Python module which must be in a subdirectory of the
-// // directory with test scripts which is not supported by the script we
-// // use.
-// #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, uniffi::Record)]
-// pub struct EpochRecord {
-//     /// A unique epoch identifier within a particular group.
-//     pub id: u64,
-//     pub data: Vec<u8>,
-// }
+// TODO(mulmarta): we'd like to use EpochRecord from mls-rs-core but
+// this breaks the Python tests because using two crates makes UniFFI
+// generate a Python module which must be in a subdirectory of the
+// directory with test scripts which is not supported by the script we
+// use.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, uniffi::Record)]
+pub struct EpochRecordFFI {
+    /// A unique epoch identifier within a particular group.
+    pub id: u64,
+    pub data: Vec<u8>,
+}
 
-// impl From<mls_rs_core::group::EpochRecord> for EpochRecord {
-//     fn from(mls_rs_core::group::EpochRecord { id, data }: mls_rs_core::group::EpochRecord) -> Self {
-//         Self { id, data }
-//     }
-// }
+impl From<EpochRecord> for EpochRecordFFI {
+    fn from(EpochRecord { id, data }: EpochRecord) -> Self {
+        Self { id, data }
+    }
+}
 
-// impl From<EpochRecord> for mls_rs_core::group::EpochRecord {
-//     fn from(EpochRecord { id, data }: EpochRecord) -> Self {
-//         Self { id, data }
-//     }
-// }
+impl From<EpochRecordFFI> for mls_rs_core::group::EpochRecord {
+    fn from(EpochRecordFFI { id, data }: EpochRecordFFI) -> Self {
+        Self { id, data }
+    }
+}
 
-// // When building for async, uniffi::export has to be applied _before_ maybe-async's injection of
-// // the async trait so that uniffi::export sees the definition before async_trait is expanded. When
-// // building for sync, the order has to be the opposite so that uniffi::export sees the sync
-// // definition of the trait.
-// #[maybe_async::must_be_sync]
-// #[uniffi::export(with_foreign)]
-// pub trait GroupStateStorage: Send + Sync + Debug {
-//     async fn state(&self, group_id: Vec<u8>) -> Result<Option<Vec<u8>>, MlSrsError>;
-//     async fn epoch(&self, group_id: Vec<u8>, epoch_id: u64) -> Result<Option<Vec<u8>>, MlSrsError>;
+// When building for async, uniffi::export has to be applied _before_ maybe-async's injection of
+// the async trait so that uniffi::export sees the definition before async_trait is expanded. When
+// building for sync, the order has to be the opposite so that uniffi::export sees the sync
+// definition of the trait.
+#[maybe_async::must_be_sync]
+#[uniffi::export(with_foreign)]
+pub trait GroupStateStorageProtocol: Send + Sync + Debug {
+    async fn state(&self, group_id: Vec<u8>) -> Result<Option<Vec<u8>>, MlSrsError>;
+    async fn epoch(&self, group_id: Vec<u8>, epoch_id: u64) -> Result<Option<Vec<u8>>, MlSrsError>;
 
-//     async fn write(
-//         &self,
-//         group_id: Vec<u8>,
-//         group_state: Vec<u8>,
-//         epoch_inserts: Vec<EpochRecord>,
-//         epoch_updates: Vec<EpochRecord>,
-//     ) -> Result<(), MlSrsError>;
+    async fn write(
+        &self,
+        group_id: Vec<u8>,
+        group_state: Vec<u8>,
+        epoch_inserts: Vec<EpochRecordFFI>,
+        epoch_updates: Vec<EpochRecordFFI>,
+    ) -> Result<(), MlSrsError>;
 
-//     async fn max_epoch_id(&self, group_id: Vec<u8>) -> Result<Option<u64>, MlSrsError>;
-// }
+    async fn max_epoch_id(&self, group_id: Vec<u8>) -> Result<Option<u64>, MlSrsError>;
+}
 
 // /// Adapt a mls-rs `GroupStateStorage` implementation.
 // ///
@@ -192,7 +194,7 @@ where
 // }
 
 // #[maybe_async::must_be_sync]
-// impl<S, Err> GroupStateStorage for GroupStateStorageAdapter<S>
+// impl<S, Err> GroupStateStorageProtocol for GroupStateStorageAdapter<S>
 // where
 //     S: mls_rs::GroupStateStorage<Error = Err> + Debug,
 //     Err: IntoAnyError,
@@ -217,13 +219,13 @@ where
 //         &self,
 //         id: Vec<u8>,
 //         data: Vec<u8>,
-//         epoch_inserts: Vec<EpochRecord>,
-//         epoch_updates: Vec<EpochRecord>,
+//         epoch_inserts: Vec<EpochRecordFFI>,
+//         epoch_updates: Vec<EpochRecordFFI>,
 //     ) -> Result<(), MlSrsError> {
 //         self.inner()
 //             .await
 //             .write(
-//                 mls_rs_core::group::GroupState { id, data },
+//                 mls_rs_core::group::GroupState { id, data }.into(),
 //                 epoch_inserts.into_iter().map(Into::into).collect(),
 //                 epoch_updates.into_iter().map(Into::into).collect(),
 //             )
