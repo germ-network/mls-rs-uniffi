@@ -1,6 +1,6 @@
 use mls_rs::error::IntoAnyError;
-use mls_rs_core::key_package::KeyPackageData;
 use mls_rs_core::group::EpochRecord;
+use mls_rs_core::key_package::KeyPackageData;
 
 use std::fmt::Debug;
 use std::sync::Mutex;

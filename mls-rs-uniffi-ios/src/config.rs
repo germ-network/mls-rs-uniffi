@@ -14,7 +14,7 @@ use mls_rs_core::key_package::KeyPackageData;
 
 // use mls_rs_crypto_cryptokit::CryptoKitProvider;
 
-use self::group_state::KeyPackageStorageProtocol;
+use self::group_state::{GroupStateStorageProtocol, KeyPackageStorageProtocol};
 // use self::group_state::{KeyPackageStorageFfi, GroupStateStorage, GroupStateStorageAdapter, KeyPackageStorageAdapter};
 use crate::MlSrsError;
 
@@ -40,7 +40,11 @@ impl mls_rs_core::key_package::KeyPackageStorage for ClientKeyPackageStorage {
     /// Store [`KeyPackageData`] that can be accessed by `id` in the future.
     ///
     /// This function is automatically called whenever a new key package is created.
-    async fn insert(&mut self, id: Vec<u8>, pkg: mls_rs_core::key_package::KeyPackageData) -> Result<(), Self::Error> {
+    async fn insert(
+        &mut self,
+        id: Vec<u8>,
+        pkg: mls_rs_core::key_package::KeyPackageData,
+    ) -> Result<(), Self::Error> {
         self.0.insert(id, pkg.into()).await
     }
 
@@ -49,52 +53,53 @@ impl mls_rs_core::key_package::KeyPackageStorage for ClientKeyPackageStorage {
     /// `None` should be returned in the event that no key packages are found
     /// that match `id`.
     async fn get(&self, id: &[u8]) -> Result<Option<KeyPackageData>, Self::Error> {
-        self.0.get(id.to_vec()).map(|result| result.map(|option| option.into() ) )
+        self.0
+            .get(id.to_vec())
+            .map(|result| result.map(|option| option.into()))
     }
 }
 
-// #[derive(Debug, Clone)]
-// pub(crate) struct ClientGroupStorage(Arc<dyn GroupStateStorage>);
+#[derive(Debug, Clone)]
+pub(crate) struct ClientGroupStorage(Arc<dyn GroupStateStorageProtocol>);
 
-// impl From<Arc<dyn GroupStateStorage>> for ClientGroupStorage {
-//     fn from(value: Arc<dyn GroupStateStorage>) -> Self {
-//         Self(value)
-//     }
-// }
+impl From<Arc<dyn GroupStateStorageProtocol>> for ClientGroupStorage {
+    fn from(value: Arc<dyn GroupStateStorageProtocol>) -> Self {
+        Self(value)
+    }
+}
 
-// #[cfg_attr(not(mls_build_async), maybe_async::must_be_sync)]
-// #[cfg_attr(mls_build_async, maybe_async::must_be_async)]
-// impl mls_rs_core::group::GroupStateStorage for ClientGroupStorage {
-//     type Error = MlSrsError;
+#[maybe_async::must_be_sync]
+impl mls_rs_core::group::GroupStateStorage for ClientGroupStorage {
+    type Error = MlSrsError;
 
-//     async fn state(&self, group_id: &[u8]) -> Result<Option<Vec<u8>>, Self::Error> {
-//         self.0.state(group_id.to_vec()).await
-//     }
+    async fn state(&self, group_id: &[u8]) -> Result<Option<Vec<u8>>, Self::Error> {
+        self.0.state(group_id.to_vec()).await
+    }
 
-//     async fn epoch(&self, group_id: &[u8], epoch_id: u64) -> Result<Option<Vec<u8>>, Self::Error> {
-//         self.0.epoch(group_id.to_vec(), epoch_id).await
-//     }
+    async fn epoch(&self, group_id: &[u8], epoch_id: u64) -> Result<Option<Vec<u8>>, Self::Error> {
+        self.0.epoch(group_id.to_vec(), epoch_id).await
+    }
 
-//     async fn write(
-//         &mut self,
-//         state: mls_rs_core::group::GroupState,
-//         inserts: Vec<mls_rs_core::group::EpochRecord>,
-//         updates: Vec<mls_rs_core::group::EpochRecord>,
-//     ) -> Result<(), Self::Error> {
-//         self.0
-//             .write(
-//                 state.id,
-//                 state.data,
-//                 inserts.into_iter().map(Into::into).collect(),
-//                 updates.into_iter().map(Into::into).collect(),
-//             )
-//             .await
-//     }
+    async fn write(
+        &mut self,
+        state: mls_rs_core::group::GroupState,
+        inserts: Vec<mls_rs_core::group::EpochRecord>,
+        updates: Vec<mls_rs_core::group::EpochRecord>,
+    ) -> Result<(), Self::Error> {
+        self.0
+            .write(
+                state.id,
+                state.data,
+                inserts.into_iter().map(Into::into).collect(),
+                updates.into_iter().map(Into::into).collect(),
+            )
+            .await
+    }
 
-//     async fn max_epoch_id(&self, group_id: &[u8]) -> Result<Option<u64>, Self::Error> {
-//         self.0.max_epoch_id(group_id.to_vec()).await
-//     }
-// }
+    async fn max_epoch_id(&self, group_id: &[u8]) -> Result<Option<u64>, Self::Error> {
+        self.0.max_epoch_id(group_id.to_vec()).await
+    }
+}
 
 // pub type UniFFIConfig = client_builder::WithIdentityProvider<
 //     IdentityProviderStorage,
