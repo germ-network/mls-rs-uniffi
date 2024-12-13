@@ -14,17 +14,17 @@ use mls_rs_core::key_package::KeyPackageData;
 
 use mls_rs_crypto_cryptokit::CryptoKitProvider;
 
+use self::group_context::{CipherSuiteFFI, ExtensionListFFI};
 use self::group_state::{
     GroupStateStorageAdapter, GroupStateStorageProtocol, KeyPackageStorageAdapter,
     KeyPackageStorageProtocol,
 };
-use self::group_context::{ExtensionListFFI, CipherSuiteFFI};
 
 // use self::group_state::{KeyPackageStorageFfi, GroupStateStorage, GroupStateStorageAdapter, KeyPackageStorageAdapter};
 use crate::MlSrsError;
 
-pub mod group_state;
 pub mod group_context;
+pub mod group_state;
 
 #[derive(Debug, Clone)]
 pub(crate) struct ClientKeyPackageStorage(Arc<dyn KeyPackageStorageProtocol>);
