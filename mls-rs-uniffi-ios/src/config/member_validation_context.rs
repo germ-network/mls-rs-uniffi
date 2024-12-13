@@ -2,7 +2,7 @@ use mls_rs_core::identity::MemberValidationContext;
 
 use crate::config::group_context::GroupContextFFI;
 use crate::config::ExtensionListFFI;
-use crate::MlSrsError;
+use crate::mls_rs_error::MlSrsError;
 
 #[derive(Debug, Clone, uniffi::Enum)]
 pub enum MemberValidationContextFFI {

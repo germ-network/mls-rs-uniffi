@@ -4,7 +4,7 @@ use mls_rs_core::{group::EpochRecord, key_package::KeyPackageData};
 use std::fmt::Debug;
 use std::sync::Mutex;
 
-use crate::MlSrsError;
+use crate::mls_rs_error::MlSrsError;
 
 #[derive(Clone, Debug, uniffi::Record)]
 pub struct KeyPackageDataFFI {

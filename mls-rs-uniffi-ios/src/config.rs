@@ -22,7 +22,7 @@ use self::group_state::{
 use crate::config::member_validation_context::MemberValidationContextFFI;
 
 // use self::group_state::{KeyPackageStorageFfi, GroupStateStorage, GroupStateStorageAdapter, KeyPackageStorageAdapter};
-use crate::MlSrsError;
+use crate::mls_rs_error::MlSrsError;
 
 pub mod group_context;
 pub mod group_state;

@@ -1,4 +1,4 @@
-use crate::MlSrsError;
+use crate::mls_rs_error::MlSrsError;
 
 use mls_rs::error::MlsError;
 
