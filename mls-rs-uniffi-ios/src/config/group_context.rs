@@ -33,7 +33,7 @@ impl TryFrom<mls_rs_core::group::GroupContext> for GroupContextFFI {
             group_id: group_id,
             epoch: epoch,
             tree_hash: tree_hash,
-            confirmed_transcript_hash: (*confirmed_transcript_hash).to_vec().into(),
+            confirmed_transcript_hash: confirmed_transcript_hash.clone().to_vec().into(),
             extensions: extensions.into(),
         })
     }

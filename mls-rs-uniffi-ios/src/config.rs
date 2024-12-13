@@ -25,6 +25,7 @@ use crate::MlSrsError;
 
 pub mod group_context;
 pub mod group_state;
+pub mod member_validation_context;
 
 #[derive(Debug, Clone)]
 pub(crate) struct ClientKeyPackageStorage(Arc<dyn KeyPackageStorageProtocol>);
