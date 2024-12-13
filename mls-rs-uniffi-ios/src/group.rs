@@ -2,6 +2,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 use crate::config::UniFFIConfig;
+use crate::ExtensionListFFI;
 
 /// An MLS end-to-end encrypted group.
 ///
@@ -25,4 +26,14 @@ impl Group {
     async fn inner(&self) -> tokio::sync::MutexGuard<'_, mls_rs::Group<UniFFIConfig>> {
         self.inner.lock().await
     }
+}
+
+/// A [`mls_rs::Group`] and [`mls_rs::group::NewMemberInfo`] wrapper.
+#[derive(uniffi::Record, Clone)]
+pub struct JoinInfo {
+    /// The group that was joined.
+    pub group: Arc<Group>,
+    /// Group info extensions found within the Welcome message used to join
+    /// the group.
+    pub group_info_extensions: ExtensionListFFI,
 }

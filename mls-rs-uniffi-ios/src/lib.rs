@@ -18,11 +18,14 @@
 //! [UniFFI]: https://mozilla.github.io/uniffi-rs/
 
 pub mod client;
-mod config;
+pub mod config;
 pub mod group;
+pub mod message;
 pub mod mls_rs_error;
 
 use crate::config::group_context::ExtensionListFFI;
+use crate::mls_rs_error::MlSrsError;
+use mls_rs::error::MlsError;
 use std::sync::Arc;
 
 // pub use config::ClientConfig;
@@ -43,15 +46,22 @@ use mls_rs_crypto_cryptokit::CryptoKitProvider;
 
 uniffi::setup_scaffolding!();
 
-// /// A [`mls_rs::Group`] and [`mls_rs::group::NewMemberInfo`] wrapper.
-// #[derive(uniffi::Record, Clone)]
-// pub struct JoinInfo {
-//     /// The group that was joined.
-//     pub group: Arc<Group>,
-//     /// Group info extensions found within the Welcome message used to join
-//     /// the group.
-//     pub group_info_extensions: ExtensionListFFI,
-// }
+#[derive(Copy, Clone, Debug, uniffi::Enum)]
+pub enum ProtocolVersion {
+    /// MLS version 1.0.
+    Mls10,
+}
+
+impl TryFrom<mls_rs::ProtocolVersion> for ProtocolVersion {
+    type Error = MlSrsError;
+
+    fn try_from(version: mls_rs::ProtocolVersion) -> Result<Self, Self::Error> {
+        match version {
+            mls_rs::ProtocolVersion::MLS_10 => Ok(ProtocolVersion::Mls10),
+            _ => Err(MlsError::UnsupportedProtocolVersion(version))?,
+        }
+    }
+}
 
 pub fn add(left: u64, right: u64) -> u64 {
     left + right
