@@ -19,6 +19,7 @@ use self::group_state::{
     GroupStateStorageAdapter, GroupStateStorageProtocol, KeyPackageStorageAdapter,
     KeyPackageStorageProtocol,
 };
+use crate::config::member_validation_context::MemberValidationContextFFI;
 
 // use self::group_state::{KeyPackageStorageFfi, GroupStateStorage, GroupStateStorageAdapter, KeyPackageStorageAdapter};
 use crate::MlSrsError;
@@ -158,6 +159,7 @@ pub fn client_config_default() -> ClientConfig {
 
 #[derive(Clone, Debug, PartialEq, Eq, uniffi::Object)]
 #[uniffi::export(Eq)]
+
 pub struct SigningIdentityFFI {
     pub inner: identity::SigningIdentity,
 }
@@ -258,7 +260,7 @@ pub trait IdentityProviderProtocol: Send + Sync + Debug {
         &self,
         signing_identity: Arc<SigningIdentityFFI>,
         timestamp: Option<u64>,
-        extensions: Option<Arc<ExtensionListFFI>>,
+        context: Option<MemberValidationContextFFI>,
     ) -> Result<(), MlSrsError>;
 
     /// Determine if `signing_identity` is valid for an external sender in
@@ -271,7 +273,7 @@ pub trait IdentityProviderProtocol: Send + Sync + Debug {
         &self,
         signing_identity: Arc<SigningIdentityFFI>,
         timestamp: Option<u64>,
-        extensions: Option<Arc<ExtensionListFFI>>,
+        extensions: Option<ExtensionListFFI>,
     ) -> Result<(), MlSrsError>;
 
     /// A unique identifier for `signing_identity`.
@@ -281,7 +283,7 @@ pub trait IdentityProviderProtocol: Send + Sync + Debug {
     async fn identity(
         &self,
         signing_identity: Arc<SigningIdentityFFI>,
-        extensions: Arc<ExtensionListFFI>,
+        extensions: ExtensionListFFI,
     ) -> Result<Vec<u8>, MlSrsError>;
 
     /// Determines if `successor` can remove `predecessor` as part of an external commit.
@@ -294,7 +296,7 @@ pub trait IdentityProviderProtocol: Send + Sync + Debug {
         &self,
         predecessor: Arc<SigningIdentityFFI>,
         successor: Arc<SigningIdentityFFI>,
-        extensions: Arc<ExtensionListFFI>,
+        extensions: ExtensionListFFI,
     ) -> Result<bool, MlSrsError>;
 
     /// Credential types that are supported by this provider.
@@ -403,7 +405,7 @@ impl IdentityProviderProtocol for BasicIdentityProviderShim {
         &self,
         _: Arc<SigningIdentityFFI>,
         _: Option<u64>,
-        _: Option<Arc<ExtensionListFFI>>,
+        _: Option<MemberValidationContextFFI>,
     ) -> Result<(), MlSrsError> {
         Ok(())
     }
@@ -412,7 +414,7 @@ impl IdentityProviderProtocol for BasicIdentityProviderShim {
         &self,
         _: Arc<SigningIdentityFFI>,
         _: Option<u64>,
-        _: Option<Arc<ExtensionListFFI>>,
+        _: Option<ExtensionListFFI>,
     ) -> Result<(), MlSrsError> {
         Ok(())
     }
@@ -420,7 +422,7 @@ impl IdentityProviderProtocol for BasicIdentityProviderShim {
     fn identity(
         &self,
         signing_identity: Arc<SigningIdentityFFI>,
-        _: Arc<ExtensionListFFI>,
+        _: ExtensionListFFI,
     ) -> Result<Vec<u8>, MlSrsError> {
         let credential = signing_identity.basic_credential();
         match credential {
@@ -433,7 +435,7 @@ impl IdentityProviderProtocol for BasicIdentityProviderShim {
         &self,
         _: Arc<SigningIdentityFFI>,
         _: Arc<SigningIdentityFFI>,
-        _: Arc<ExtensionListFFI>,
+        _: ExtensionListFFI,
     ) -> Result<bool, MlSrsError> {
         Ok(true)
     }

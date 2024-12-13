@@ -4,6 +4,7 @@ use crate::config::group_context::GroupContextFFI;
 use crate::config::ExtensionListFFI;
 use crate::MlSrsError;
 
+#[derive(Debug, Clone, uniffi::Enum)]
 pub enum MemberValidationContextFFI {
     ForCommit {
         current_context: GroupContextFFI,

@@ -2,6 +2,7 @@ use crate::MlSrsError;
 
 use mls_rs::error::MlsError;
 
+#[derive(uniffi::Record, Debug, Clone)]
 pub struct GroupContextFFI {
     pub protocol_version: u16,
     pub cipher_suite: CipherSuiteFFI,
@@ -68,25 +69,37 @@ impl TryFrom<mls_rs::CipherSuite> for CipherSuiteFFI {
 }
 
 /// A [`mls_rs::ExtensionList`] wrapper.
-#[derive(uniffi::Object, Debug, Clone)]
+#[derive(uniffi::Record, Debug, Clone)]
 pub struct ExtensionListFFI {
-    _inner: mls_rs::ExtensionList,
+    _inner: Vec<ExtensionFFI>,
 }
 
 impl From<mls_rs::ExtensionList> for ExtensionListFFI {
     fn from(inner: mls_rs::ExtensionList) -> Self {
-        Self { _inner: inner }
+        Self {
+            _inner: (*inner).clone().into_iter().map(Into::into).collect(),
+        }
     }
 }
 
 /// A [`mls_rs::Extension`] wrapper.
-#[derive(uniffi::Object, Debug, Clone)]
+#[derive(uniffi::Record, Debug, Clone)]
 pub struct ExtensionFFI {
-    _inner: mls_rs::Extension,
+    pub extension_type_raw: u16,
+    pub extension_data: Vec<u8>,
 }
 
 impl From<mls_rs::Extension> for ExtensionFFI {
-    fn from(inner: mls_rs::Extension) -> Self {
-        Self { _inner: inner }
+    fn from(
+        mls_rs::Extension {
+            extension_type,
+            extension_data,
+            ..
+        }: mls_rs::Extension,
+    ) -> Self {
+        Self {
+            extension_type_raw: extension_type.raw_value(),
+            extension_data: extension_data,
+        }
     }
 }
