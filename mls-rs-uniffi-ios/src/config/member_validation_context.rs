@@ -35,6 +35,7 @@ impl TryFrom<mls_rs_core::identity::MemberValidationContext<'_>> for MemberValid
                 })
             }
             MemberValidationContext::None => Ok(MemberValidationContextFFI::None),
+            //mls_rs_core::identity::MemberValidationContext is non-exhaustive
             _ => Ok(MemberValidationContextFFI::None),
         }
     }
