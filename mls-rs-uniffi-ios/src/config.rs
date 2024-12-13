@@ -260,7 +260,7 @@ pub trait IdentityProviderProtocol: Send + Sync + Debug {
         &self,
         signing_identity: Arc<SigningIdentityFFI>,
         timestamp: Option<u64>,
-        context: Option<MemberValidationContextFFI>,
+        context: MemberValidationContextFFI,
     ) -> Result<(), MlSrsError>;
 
     /// Determine if `signing_identity` is valid for an external sender in
@@ -312,83 +312,84 @@ impl From<Arc<dyn IdentityProviderProtocol>> for IdentityProviderStorage {
     }
 }
 
-// #[maybe_async::must_be_sync]
-// impl mls_rs_core::identity::IdentityProvider for IdentityProviderStorage {
-//     type Error = MlSrsError;
+#[maybe_async::must_be_sync]
+impl mls_rs_core::identity::IdentityProvider for IdentityProviderStorage {
+    type Error = MlSrsError;
 
-//     async fn validate_member(
-//         &self,
-//         signing_identity: &identity::SigningIdentity,
-//         timestamp: Option<MlsTime>,
-//         extensions: Option<&mls_rs::ExtensionList>,
-//     ) -> Result<(), Self::Error> {
-//         self.0.validate_member(
-//             Arc::new( signing_identity.clone().into() ),
-//             timestamp.map(|t| t.seconds_since_epoch()),
-//             extensions.map(|e| Arc::new( e.clone().into() ))
-//         )
-//     }
+    async fn validate_member(
+        &self,
+        signing_identity: &identity::SigningIdentity,
+        timestamp: Option<MlsTime>,
+        context: mls_rs_core::identity::MemberValidationContext,
+    ) -> Result<(), Self::Error> {
+        self.0.validate_member(
+            Arc::new(signing_identity.clone().into()),
+            timestamp.map(|t| t.seconds_since_epoch()),
+            context.try_into()?,
+        )
+    }
 
-//     /// Determine if `signing_identity` is valid for an external sender in
-//     /// the ExternalSendersExtension stored in the group context.
-//     ///
-//     /// A `timestamp` value can optionally be supplied to aid with validation
-//     /// of a [`Credential`](mls-rs-core::identity::Credential) that requires
-//     /// time based context. For example, X.509 certificates can become expired.
-//     fn validate_external_sender(
-//         &self,
-//         signing_identity: &identity::SigningIdentity,
-//         timestamp: Option<MlsTime>,
-//         extensions: Option<&mls_rs::ExtensionList>,
-//     ) -> Result<(), MlSrsError> {
-//         self.0.validate_external_sender(
-//             Arc::new( signing_identity.clone().into() ),
-//             timestamp.map(|t| t.seconds_since_epoch()),
-//             extensions.map(|e| Arc::new( e.clone().into() ))
-//         )
-//     }
+    /// Determine if `signing_identity` is valid for an external sender in
+    /// the ExternalSendersExtension stored in the group context.
+    ///
+    /// A `timestamp` value can optionally be supplied to aid with validation
+    /// of a [`Credential`](mls-rs-core::identity::Credential) that requires
+    /// time based context. For example, X.509 certificates can become expired.
+    fn validate_external_sender(
+        &self,
+        signing_identity: &identity::SigningIdentity,
+        timestamp: Option<MlsTime>,
+        extensions: Option<&mls_rs::ExtensionList>,
+    ) -> Result<(), MlSrsError> {
+        self.0.validate_external_sender(
+            Arc::new(signing_identity.clone().into()),
+            timestamp.map(|t| t.seconds_since_epoch()),
+            extensions.map(|e| e.clone().into()),
+        )
+    }
 
-//     /// A unique identifier for `signing_identity`.
-//     ///
-//     /// The MLS protocol requires that each member of a group has a unique
-//     /// set of identifiers according to the application.
-//     fn identity(
-//         &self,
-//         signing_identity: &identity::SigningIdentity,
-//         extensions: &mls_rs::ExtensionList,
-//     ) -> Result<Vec<u8>, MlSrsError> {
-//         self.0.identity(
-//             Arc::new( signing_identity.clone().into() ),
-//             Arc::new( extensions.clone().into() )
-//         )
-//     }
+    /// A unique identifier for `signing_identity`.
+    ///
+    /// The MLS protocol requires that each member of a group has a unique
+    /// set of identifiers according to the application.
+    fn identity(
+        &self,
+        signing_identity: &identity::SigningIdentity,
+        extensions: &mls_rs::ExtensionList,
+    ) -> Result<Vec<u8>, MlSrsError> {
+        self.0.identity(
+            Arc::new(signing_identity.clone().into()),
+            extensions.clone().into(),
+        )
+    }
 
-//     /// Determines if `successor` can remove `predecessor` as part of an external commit.
-//     ///
-//     /// The MLS protocol allows for removal of an existing member when adding a
-//     /// new member via external commit. This function determines if a removal
-//     /// should be allowed by providing the target member to be removed as
-//     /// `predecessor` and the new member as `successor`.
-//     fn valid_successor(
-//         &self,
-//         predecessor: &identity::SigningIdentity,
-//         successor: &identity::SigningIdentity,
-//         extensions: &mls_rs::ExtensionList,
-//     ) -> Result<bool, MlSrsError> {
-//         self.0.valid_successor(
-//             Arc::new( predecessor.clone().into() ),
-//             Arc::new( successor.clone().into() ),
-//             Arc::new( extensions.clone().into() )
-//         )
-//     }
+    /// Determines if `successor` can remove `predecessor` as part of an external commit.
+    ///
+    /// The MLS protocol allows for removal of an existing member when adding a
+    /// new member via external commit. This function determines if a removal
+    /// should be allowed by providing the target member to be removed as
+    /// `predecessor` and the new member as `successor`.
+    fn valid_successor(
+        &self,
+        predecessor: &identity::SigningIdentity,
+        successor: &identity::SigningIdentity,
+        extensions: &mls_rs::ExtensionList,
+    ) -> Result<bool, MlSrsError> {
+        self.0.valid_successor(
+            Arc::new(predecessor.clone().into()),
+            Arc::new(successor.clone().into()),
+            extensions.clone().into(),
+        )
+    }
 
-//     fn supported_types(&self) -> Vec<mls_rs::identity::CredentialType> {
-//         self.0.supported_types()
-//             .iter()
-//             .map(|n| mls_rs::identity::CredentialType::new(*n))
-//             .collect()
-//     }
-// }
+    fn supported_types(&self) -> Vec<mls_rs::identity::CredentialType> {
+        self.0
+            .supported_types()
+            .iter()
+            .map(|n| mls_rs::identity::CredentialType::new(*n))
+            .collect()
+    }
+}
 
 //Instead of an adapter, just a simple default shim
 #[derive(Debug)]
@@ -405,7 +406,7 @@ impl IdentityProviderProtocol for BasicIdentityProviderShim {
         &self,
         _: Arc<SigningIdentityFFI>,
         _: Option<u64>,
-        _: Option<MemberValidationContextFFI>,
+        _: MemberValidationContextFFI,
     ) -> Result<(), MlSrsError> {
         Ok(())
     }
