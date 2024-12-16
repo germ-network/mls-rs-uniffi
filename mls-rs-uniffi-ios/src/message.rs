@@ -164,8 +164,13 @@ pub enum ProposalFFI {
 
 #[derive(Clone, Debug, uniffi::Object)]
 pub struct ReplaceProposalFFI {
-    pub(crate) to_replace: u32,
+    pub(crate) to_replace: LeafIndexFFI,
     pub(crate) leaf_node: LeafNodeFFI,
+}
+
+#[derive(Clone, Debug, uniffi::Record)]
+pub struct LeafIndexFFI {
+    pub index: u32,
 }
 
 #[derive(Clone, Debug, uniffi::Object)]
@@ -194,12 +199,17 @@ pub struct Lifetime {
 
 #[derive(Clone, Debug, uniffi::Object)]
 pub struct KeyPackageFFI {
-    pub version: u16,
+    pub version: ProtocolVersionFFI,
     pub cipher_suite: CipherSuiteFFI,
     pub hpke_init_key: Vec<u8>,
     pub leaf_node: LeafNodeFFI,
     pub extensions: ExtensionListFFI,
     pub signature: Vec<u8>,
+}
+
+#[derive(Clone, Debug, uniffi::Record)]
+pub struct ProtocolVersionFFI {
+    pub version: u16,
 }
 
 // /// A member of a MLS group.

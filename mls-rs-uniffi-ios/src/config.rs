@@ -121,7 +121,7 @@ pub type UniFFIConfig = client_builder::WithIdentityProvider<
 >;
 
 #[derive(Debug, Clone, uniffi::Record)]
-pub struct ClientConfig {
+pub struct ClientConfigFFI {
     pub client_keypackage_storage: Arc<dyn KeyPackageStorageProtocol>,
     pub group_state_storage: Arc<dyn GroupStateStorageProtocol>,
     pub identity_provider_storage: Arc<dyn IdentityProviderProtocol>,
@@ -130,7 +130,7 @@ pub struct ClientConfig {
     pub use_ratchet_tree_extension: bool,
 }
 
-impl Default for ClientConfig {
+impl Default for ClientConfigFFI {
     fn default() -> Self {
         Self {
             client_keypackage_storage: Arc::new(KeyPackageStorageAdapter::new(
@@ -149,8 +149,8 @@ impl Default for ClientConfig {
 // supports them: https://github.com/mozilla/uniffi-rs/issues/1074.
 /// Create a client config with an in-memory group state storage.
 #[uniffi::export]
-pub fn client_config_default() -> ClientConfig {
-    ClientConfig::default()
+pub fn client_config_default() -> ClientConfigFFI {
+    ClientConfigFFI::default()
 }
 
 // /// Adapt an IdentityProvider
