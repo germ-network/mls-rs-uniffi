@@ -1,4 +1,5 @@
 use mls_rs_core::identity::MemberValidationContext;
+use std::sync::Arc;
 
 use crate::config::group_context::GroupContextFFI;
 use crate::config::ExtensionListFFI;
@@ -8,7 +9,7 @@ use crate::mls_rs_error::MlSrsError;
 pub enum MemberValidationContextFFI {
     ForCommit {
         current_context: GroupContextFFI,
-        new_extensions: ExtensionListFFI,
+        new_extensions: Arc<ExtensionListFFI>,
     },
     ForNewGroup {
         current_context: GroupContextFFI,
@@ -28,7 +29,7 @@ impl TryFrom<mls_rs_core::identity::MemberValidationContext<'_>> for MemberValid
                 new_extensions,
             } => Ok(MemberValidationContextFFI::ForCommit {
                 current_context: current_context.clone().try_into()?,
-                new_extensions: new_extensions.clone().into(),
+                new_extensions: Arc::new(new_extensions.clone().into()),
             }),
             MemberValidationContext::ForNewGroup { current_context } => {
                 Ok(MemberValidationContextFFI::ForNewGroup {

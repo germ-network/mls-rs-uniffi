@@ -159,7 +159,6 @@ pub fn client_config_default() -> ClientConfig {
 
 #[derive(Clone, Debug, PartialEq, Eq, uniffi::Object)]
 #[uniffi::export(Eq)]
-
 pub struct SigningIdentityFFI {
     pub inner: identity::SigningIdentity,
 }
@@ -273,7 +272,7 @@ pub trait IdentityProviderProtocol: Send + Sync + Debug {
         &self,
         signing_identity: Arc<SigningIdentityFFI>,
         timestamp: Option<u64>,
-        extensions: Option<ExtensionListFFI>,
+        extensions: Option<Arc<ExtensionListFFI>>,
     ) -> Result<(), MlSrsError>;
 
     /// A unique identifier for `signing_identity`.
@@ -283,7 +282,7 @@ pub trait IdentityProviderProtocol: Send + Sync + Debug {
     async fn identity(
         &self,
         signing_identity: Arc<SigningIdentityFFI>,
-        extensions: ExtensionListFFI,
+        extensions: Arc<ExtensionListFFI>,
     ) -> Result<Vec<u8>, MlSrsError>;
 
     /// Determines if `successor` can remove `predecessor` as part of an external commit.
@@ -296,7 +295,7 @@ pub trait IdentityProviderProtocol: Send + Sync + Debug {
         &self,
         predecessor: Arc<SigningIdentityFFI>,
         successor: Arc<SigningIdentityFFI>,
-        extensions: ExtensionListFFI,
+        extensions: Arc<ExtensionListFFI>,
     ) -> Result<bool, MlSrsError>;
 
     /// Credential types that are supported by this provider.
@@ -344,7 +343,7 @@ impl mls_rs_core::identity::IdentityProvider for IdentityProviderStorage {
         self.0.validate_external_sender(
             Arc::new(signing_identity.clone().into()),
             timestamp.map(|t| t.seconds_since_epoch()),
-            extensions.map(|e| e.clone().into()),
+            extensions.map(|e| Arc::new(e.clone().into())),
         )
     }
 
@@ -359,7 +358,7 @@ impl mls_rs_core::identity::IdentityProvider for IdentityProviderStorage {
     ) -> Result<Vec<u8>, MlSrsError> {
         self.0.identity(
             Arc::new(signing_identity.clone().into()),
-            extensions.clone().into(),
+            Arc::new(extensions.clone().into()),
         )
     }
 
@@ -378,7 +377,7 @@ impl mls_rs_core::identity::IdentityProvider for IdentityProviderStorage {
         self.0.valid_successor(
             Arc::new(predecessor.clone().into()),
             Arc::new(successor.clone().into()),
-            extensions.clone().into(),
+            Arc::new(extensions.clone().into()),
         )
     }
 
@@ -415,7 +414,7 @@ impl IdentityProviderProtocol for BasicIdentityProviderShim {
         &self,
         _: Arc<SigningIdentityFFI>,
         _: Option<u64>,
-        _: Option<ExtensionListFFI>,
+        _: Option<Arc<ExtensionListFFI>>,
     ) -> Result<(), MlSrsError> {
         Ok(())
     }
@@ -423,7 +422,7 @@ impl IdentityProviderProtocol for BasicIdentityProviderShim {
     fn identity(
         &self,
         signing_identity: Arc<SigningIdentityFFI>,
-        _: ExtensionListFFI,
+        _: Arc<ExtensionListFFI>,
     ) -> Result<Vec<u8>, MlSrsError> {
         let credential = signing_identity.basic_credential();
         match credential {
@@ -436,7 +435,7 @@ impl IdentityProviderProtocol for BasicIdentityProviderShim {
         &self,
         _: Arc<SigningIdentityFFI>,
         _: Arc<SigningIdentityFFI>,
-        _: ExtensionListFFI,
+        _: Arc<ExtensionListFFI>,
     ) -> Result<bool, MlSrsError> {
         Ok(true)
     }

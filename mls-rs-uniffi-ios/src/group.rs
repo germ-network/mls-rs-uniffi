@@ -17,14 +17,8 @@ pub struct Group {
 
 #[maybe_async::must_be_sync]
 impl Group {
-    #[cfg(not(mls_build_async))]
     fn inner(&self) -> std::sync::MutexGuard<'_, mls_rs::Group<UniFFIConfig>> {
         self.inner.lock().unwrap()
-    }
-
-    #[cfg(mls_build_async)]
-    async fn inner(&self) -> tokio::sync::MutexGuard<'_, mls_rs::Group<UniFFIConfig>> {
-        self.inner.lock().await
     }
 }
 
@@ -35,5 +29,5 @@ pub struct JoinInfo {
     pub group: Arc<Group>,
     /// Group info extensions found within the Welcome message used to join
     /// the group.
-    pub group_info_extensions: ExtensionListFFI,
+    pub group_info_extensions: Arc<ExtensionListFFI>,
 }

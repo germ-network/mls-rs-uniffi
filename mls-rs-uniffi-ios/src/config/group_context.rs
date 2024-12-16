@@ -1,4 +1,5 @@
 use crate::mls_rs_error::MlSrsError;
+use std::sync::Arc;
 
 use mls_rs::error::MlsError;
 
@@ -11,7 +12,7 @@ pub struct GroupContextFFI {
     pub tree_hash: Vec<u8>,
     //in mls-rs is a ConfirmedTranscriptHash object that contains a Vec<u8>
     pub confirmed_transcript_hash: Vec<u8>,
-    pub extensions: ExtensionListFFI,
+    pub extensions: Arc<ExtensionListFFI>,
 }
 
 impl TryFrom<mls_rs_core::group::GroupContext> for GroupContextFFI {
@@ -35,7 +36,7 @@ impl TryFrom<mls_rs_core::group::GroupContext> for GroupContextFFI {
             epoch: epoch,
             tree_hash: tree_hash,
             confirmed_transcript_hash: confirmed_transcript_hash.clone().to_vec().into(),
-            extensions: extensions.into(),
+            extensions: Arc::new(extensions.into()),
         })
     }
 }
@@ -69,7 +70,7 @@ impl TryFrom<mls_rs::CipherSuite> for CipherSuiteFFI {
 }
 
 /// A [`mls_rs::ExtensionList`] wrapper.
-#[derive(uniffi::Record, Debug, Clone)]
+#[derive(uniffi::Object, Debug, Clone)]
 pub struct ExtensionListFFI {
     _inner: Vec<ExtensionFFI>,
 }
@@ -83,7 +84,7 @@ impl From<mls_rs::ExtensionList> for ExtensionListFFI {
 }
 
 /// A [`mls_rs::Extension`] wrapper.
-#[derive(uniffi::Record, Debug, Clone)]
+#[derive(uniffi::Object, Debug, Clone)]
 pub struct ExtensionFFI {
     pub extension_type_raw: u16,
     pub extension_data: Vec<u8>,
