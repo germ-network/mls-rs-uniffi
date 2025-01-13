@@ -12,7 +12,7 @@ use crate::ExtensionListFFI;
 /// See [`mls_rs::Group`] for details.
 #[derive(Clone, uniffi::Object)]
 pub struct Group {
-    inner: Arc<Mutex<mls_rs::Group<UniFFIConfig>>>,
+    pub(crate) inner: Arc<Mutex<mls_rs::Group<UniFFIConfig>>>,
 }
 
 #[maybe_async::must_be_sync]

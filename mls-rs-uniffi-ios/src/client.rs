@@ -1,9 +1,12 @@
 use crate::config::group_context::CipherSuiteFFI;
 use crate::config::SigningIdentityFFI;
 use crate::config::{ClientConfigFFI, UniFFIConfig};
+use crate::group::Group;
 use crate::message::MessageFFI;
 use crate::MlSrsError;
+
 use std::sync::Arc;
+use std::sync::Mutex;
 
 use mls_rs::mls_rules::{CommitOptions, DefaultMlsRules, EncryptionOptions};
 use mls_rs_core::identity::{BasicCredential, IdentityProvider, SigningIdentity};
@@ -85,27 +88,34 @@ impl Client {
         Ok(Arc::new(signing_identity.clone().into()))
     }
 
-    // /// Create and immediately join a new group.
-    // ///
-    // /// If a group ID is not given, the underlying library will create
-    // /// a unique ID for you.
-    // ///
-    // /// See [`mls_rs::Client::create_group`] and
-    // /// [`mls_rs::Client::create_group_with_id`] for details.
-    // pub async fn create_group(&self, group_id: Option<Vec<u8>>) -> Result<Group, MlSrsError> {
-    //     let extensions = mls_rs::ExtensionList::new();
-    //     let inner = match group_id {
-    //         Some(group_id) => {
-    //             self.inner
-    //                 .create_group_with_id(group_id, extensions)
-    //                 .await?
-    //         }
-    //         None => self.inner.create_group(extensions).await?,
-    //     };
-    //     Ok(Group {
-    //         inner: Arc::new(Mutex::new(inner)),
-    //     })
-    // }
+    /// Create and immediately join a new group.
+    ///
+    /// If a group ID is not given, the underlying library will create
+    /// a unique ID for you.
+    ///
+    /// See [`mls_rs::Client::create_group`] and
+    /// [`mls_rs::Client::create_group_with_id`] for details.
+    pub async fn create_group(&self, group_id: Option<Vec<u8>>) -> Result<Group, MlSrsError> {
+        let inner = match group_id {
+            Some(group_id) => {
+                self.inner
+                    .create_group_with_id(
+                        group_id,
+                        mls_rs::ExtensionList::new(),
+                        mls_rs::ExtensionList::new(),
+                    )
+                    .await?
+            }
+            None => {
+                self.inner
+                    .create_group(mls_rs::ExtensionList::new(), mls_rs::ExtensionList::new())
+                    .await?
+            }
+        };
+        Ok(Group {
+            inner: Arc::new(Mutex::new(inner)),
+        })
+    }
 
     // /// Join an existing group.
     // ///
