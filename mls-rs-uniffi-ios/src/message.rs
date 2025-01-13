@@ -11,7 +11,7 @@ use mls_rs::error::{IntoAnyError, MlsError};
 
 #[derive(Clone, Debug, uniffi::Object)]
 pub struct MessageFFI {
-    inner: mls_rs::MlsMessage,
+    pub(crate) inner: mls_rs::MlsMessage,
 }
 
 // A [`mls_rs::MlsMessage`] wrapper.

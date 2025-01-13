@@ -1,7 +1,7 @@
 use crate::config::group_context::CipherSuiteFFI;
 use crate::config::SigningIdentityFFI;
 use crate::config::{ClientConfigFFI, UniFFIConfig};
-use crate::group::Group;
+use crate::group::{Group, JoinInfo};
 use crate::message::MessageFFI;
 use crate::MlSrsError;
 
@@ -117,32 +117,31 @@ impl Client {
         })
     }
 
-    // /// Join an existing group.
-    // ///
-    // /// You must supply `ratchet_tree` if the client that created
-    // /// `welcome_message` did not set `use_ratchet_tree_extension`.
-    // ///
-    // /// See [`mls_rs::Client::join_group`] for details.
-    // pub async fn join_group(
-    //     &self,
-    //     ratchet_tree: Option<RatchetTree>,
-    //     welcome_message: &Message,
-    // ) -> Result<JoinInfo, MlSrsError> {
-    //     let ratchet_tree = ratchet_tree.map(TryInto::try_into).transpose()?;
-    //     let (group, new_member_info) = self
-    //         .inner
-    //         .join_group(ratchet_tree, &welcome_message.inner)
-    //         .await?;
+    /// Join an existing group.
+    ///
+    /// You must supply `ratchet_tree` if the client that created
+    /// `welcome_message` did not set `use_ratchet_tree_extension`.
+    ///
+    /// This variant doesn't support an imported ratched tree
+    ///
+    /// See [`mls_rs::Client::join_group`] for details.
+    pub async fn join_group(
+        &self,
+        // ratchet_tree: Option<RatchetTree>,
+        welcome_message: &MessageFFI,
+    ) -> Result<JoinInfo, MlSrsError> {
+        // let ratchet_tree = ratchet_tree.map(TryInto::try_into).transpose()?;
+        let (group, new_member_info) = self.inner.join_group(None, &welcome_message.inner).await?;
 
-    //     let group = Arc::new(Group {
-    //         inner: Arc::new(Mutex::new(group)),
-    //     });
-    //     let group_info_extensions = Arc::new(new_member_info.group_info_extensions.into());
-    //     Ok(JoinInfo {
-    //         group,
-    //         group_info_extensions,
-    //     })
-    // }
+        let group = Arc::new(Group {
+            inner: Arc::new(Mutex::new(group)),
+        });
+        let group_info_extensions = Arc::new(new_member_info.group_info_extensions.into());
+        Ok(JoinInfo {
+            group,
+            group_info_extensions,
+        })
+    }
 
     // /// Load an existing group.
     // ///
