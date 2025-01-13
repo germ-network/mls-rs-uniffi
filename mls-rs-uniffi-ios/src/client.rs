@@ -143,18 +143,18 @@ impl Client {
         })
     }
 
-    // /// Load an existing group.
-    // ///
-    // /// See [`mls_rs::Client::load_group`] for details.
-    // pub async fn load_group(&self, group_id: Vec<u8>) -> Result<Group, MlSrsError> {
-    //     self.inner
-    //         .load_group(&group_id)
-    //         .await
-    //         .map(|g| Group {
-    //             inner: Arc::new(Mutex::new(g)),
-    //         })
-    //         .map_err(Into::into)
-    // }
+    /// Load an existing group.
+    ///
+    /// See [`mls_rs::Client::load_group`] for details.
+    pub async fn load_group(&self, group_id: Vec<u8>) -> Result<Group, MlSrsError> {
+        self.inner
+            .load_group(&group_id)
+            .await
+            .map(|g| Group {
+                inner: Arc::new(Mutex::new(g)),
+            })
+            .map_err(Into::into)
+    }
 }
 
 /// A ([`SignaturePublicKey`], [`SignatureSecretKey`]) pair.
