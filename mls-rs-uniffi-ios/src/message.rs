@@ -10,13 +10,13 @@ use mls_rs::error::{IntoAnyError, MlsError};
 ///Matches types in mls_rs::group::message_processor
 
 #[derive(Clone, Debug, uniffi::Object)]
-pub struct Message {
+pub struct MessageFFI {
     inner: mls_rs::MlsMessage,
 }
 
 // A [`mls_rs::MlsMessage`] wrapper.
 #[uniffi::export]
-impl Message {
+impl MessageFFI {
     #[uniffi::constructor]
     pub fn new(bytes: &[u8]) -> Result<Self, MlSrsError> {
         let inner = mls_rs::MlsMessage::from_bytes(bytes).map_err(|err| err.into_any_error())?;
@@ -46,7 +46,7 @@ impl Message {
     // }
 }
 
-impl From<mls_rs::MlsMessage> for Message {
+impl From<mls_rs::MlsMessage> for MessageFFI {
     fn from(inner: mls_rs::MlsMessage) -> Self {
         Self { inner }
     }

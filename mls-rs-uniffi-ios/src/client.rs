@@ -1,5 +1,9 @@
 use crate::config::group_context::CipherSuiteFFI;
+use crate::config::SigningIdentityFFI;
 use crate::config::{ClientConfigFFI, UniFFIConfig};
+use crate::message::MessageFFI;
+use crate::MlSrsError;
+use std::sync::Arc;
 
 use mls_rs::mls_rules::{CommitOptions, DefaultMlsRules, EncryptionOptions};
 use mls_rs_core::identity::{BasicCredential, IdentityProvider, SigningIdentity};
@@ -57,23 +61,29 @@ impl Client {
         Client { inner: client }
     }
 
-    // /// Generate a new key package for this client.
-    // ///
-    // /// The key package is represented in is MLS message form. It is
-    // /// needed when joining a group and can be published to a server
-    // /// so other clients can look it up.
-    // ///
-    // /// See [`mls_rs::Client::generate_key_package_message`] for
-    // /// details.
-    // pub async fn generate_key_package_message(&self) -> Result<Message, MlSrsError> {
-    //     let message = self.inner.generate_key_package_message().await?;
-    //     Ok(message.into())
-    // }
+    /// Generate a new key package for this client.
+    ///
+    /// The key package is represented in is MLS message form. It is
+    /// needed when joining a group and can be published to a server
+    /// so other clients can look it up.
+    ///
+    /// See [`mls_rs::Client::generate_key_package_message`] for
+    /// details.
+    pub async fn generate_key_package_message(&self) -> Result<MessageFFI, MlSrsError> {
+        let message = self
+            .inner
+            .generate_key_package_message(
+                mls_rs::ExtensionList::default(),
+                mls_rs::ExtensionList::default(),
+            )
+            .await?;
+        Ok(message.into())
+    }
 
-    // pub fn signing_identity(&self) -> Result<Arc<SigningIdentity>, MlSrsError> {
-    //     let (signing_identity, _) = self.inner.signing_identity()?;
-    //     Ok(Arc::new(signing_identity.clone().into()))
-    // }
+    pub fn signing_identity(&self) -> Result<Arc<SigningIdentityFFI>, MlSrsError> {
+        let (signing_identity, _) = self.inner.signing_identity()?;
+        Ok(Arc::new(signing_identity.clone().into()))
+    }
 
     // /// Create and immediately join a new group.
     // ///

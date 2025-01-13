@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use mls_rs::{
     client_builder::{self, WithGroupStateStorage, WithKeyPackageRepo},
-    error::MlsError,
+    error::{IntoAnyError, MlsError},
     storage_provider::in_memory::InMemoryGroupStateStorage,
     storage_provider::in_memory::InMemoryKeyPackageStorage,
     time::MlsTime,
