@@ -63,6 +63,16 @@ impl TryFrom<mls_rs::ProtocolVersion> for ProtocolVersion {
     }
 }
 
+/// Unwrap the `Arc` if there is a single strong reference, otherwise
+/// clone the inner value.
+fn arc_unwrap_or_clone<T: Clone>(arc: Arc<T>) -> T {
+    // TODO(mgeisler): use Arc::unwrap_or_clone from Rust 1.76.
+    match Arc::try_unwrap(arc) {
+        Ok(t) => t,
+        Err(arc) => (*arc).clone(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
