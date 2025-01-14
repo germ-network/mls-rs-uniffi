@@ -66,7 +66,7 @@ impl TryFrom<mls_rs::ProtocolVersion> for ProtocolVersion {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::client::Client;
+    use crate::client::ClientFFI;
     use crate::config::group_state::{EpochRecordFFI, GroupStateStorageProtocol};
     use crate::config::ClientConfigFFI;
     use crate::group::Group;

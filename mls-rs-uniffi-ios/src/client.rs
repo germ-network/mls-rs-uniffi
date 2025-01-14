@@ -16,13 +16,13 @@ use mls_rs_crypto_cryptokit::CryptoKitProvider;
 ///
 /// See [`mls_rs::Client`] for details.
 #[derive(Clone, Debug, uniffi::Object)]
-pub struct Client {
+pub struct ClientFFI {
     inner: mls_rs::client::Client<UniFFIConfig>,
 }
 
 #[maybe_async::must_be_sync]
 #[uniffi::export]
-impl Client {
+impl ClientFFI {
     /// Create a new client.
     ///
     /// The user is identified by `id`, which will be used to create a
@@ -61,7 +61,7 @@ impl Client {
             .mls_rules(mls_rules)
             .build();
 
-        Client { inner: client }
+        ClientFFI { inner: client }
     }
 
     /// Generate a new key package for this client.
