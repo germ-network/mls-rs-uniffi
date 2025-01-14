@@ -1,7 +1,7 @@
 use crate::config::group_context::CipherSuiteFFI;
 use crate::config::SigningIdentityFFI;
 use crate::config::{ClientConfigFFI, UniFFIConfig};
-use crate::group::{Group, JoinInfo};
+use crate::group::{GroupFFI, JoinInfo};
 use crate::message::MessageFFI;
 use crate::MlSrsError;
 
@@ -95,7 +95,7 @@ impl ClientFFI {
     ///
     /// See [`mls_rs::Client::create_group`] and
     /// [`mls_rs::Client::create_group_with_id`] for details.
-    pub async fn create_group(&self, group_id: Option<Vec<u8>>) -> Result<Group, MlSrsError> {
+    pub async fn create_group(&self, group_id: Option<Vec<u8>>) -> Result<GroupFFI, MlSrsError> {
         let inner = match group_id {
             Some(group_id) => {
                 self.inner
@@ -112,7 +112,7 @@ impl ClientFFI {
                     .await?
             }
         };
-        Ok(Group {
+        Ok(GroupFFI {
             inner: Arc::new(Mutex::new(inner)),
         })
     }
@@ -133,7 +133,7 @@ impl ClientFFI {
         // let ratchet_tree = ratchet_tree.map(TryInto::try_into).transpose()?;
         let (group, new_member_info) = self.inner.join_group(None, &welcome_message.inner).await?;
 
-        let group = Arc::new(Group {
+        let group = Arc::new(GroupFFI {
             inner: Arc::new(Mutex::new(group)),
         });
         let group_info_extensions = Arc::new(new_member_info.group_info_extensions.into());
@@ -146,11 +146,11 @@ impl ClientFFI {
     /// Load an existing group.
     ///
     /// See [`mls_rs::Client::load_group`] for details.
-    pub async fn load_group(&self, group_id: Vec<u8>) -> Result<Group, MlSrsError> {
+    pub async fn load_group(&self, group_id: Vec<u8>) -> Result<GroupFFI, MlSrsError> {
         self.inner
             .load_group(&group_id)
             .await
-            .map(|g| Group {
+            .map(|g| GroupFFI {
                 inner: Arc::new(Mutex::new(g)),
             })
             .map_err(Into::into)

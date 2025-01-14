@@ -69,7 +69,7 @@ mod tests {
     use crate::client::ClientFFI;
     use crate::config::group_state::{EpochRecordFFI, GroupStateStorageProtocol};
     use crate::config::ClientConfigFFI;
-    use crate::group::Group;
+    use crate::group::GroupFFI;
     use mls_rs_core::group::EpochRecord;
     use std::collections::HashMap;
 
@@ -270,7 +270,7 @@ mod tests {
     //     Ok(())
     // }
 
-    fn setup_test() -> Result<(Group, Group), MlSrsError> {
+    fn setup_test() -> Result<(GroupFFI, GroupFFI), MlSrsError> {
         // let alice_config = ClientConfigFFI {
         //     group_state_storage: Arc::new(CustomGroupStateStorage::new()),
         //     ..Default::default()

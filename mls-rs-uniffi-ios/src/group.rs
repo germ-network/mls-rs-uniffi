@@ -11,12 +11,12 @@ use crate::ExtensionListFFI;
 ///
 /// See [`mls_rs::Group`] for details.
 #[derive(Clone, uniffi::Object)]
-pub struct Group {
+pub struct GroupFFI {
     pub(crate) inner: Arc<Mutex<mls_rs::Group<UniFFIConfig>>>,
 }
 
 #[maybe_async::must_be_sync]
-impl Group {
+impl GroupFFI {
     fn inner(&self) -> std::sync::MutexGuard<'_, mls_rs::Group<UniFFIConfig>> {
         self.inner.lock().unwrap()
     }
@@ -26,7 +26,7 @@ impl Group {
 #[derive(uniffi::Record, Clone)]
 pub struct JoinInfo {
     /// The group that was joined.
-    pub group: Arc<Group>,
+    pub group: Arc<GroupFFI>,
     /// Group info extensions found within the Welcome message used to join
     /// the group.
     pub group_info_extensions: Arc<ExtensionListFFI>,
