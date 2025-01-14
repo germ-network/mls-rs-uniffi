@@ -177,7 +177,7 @@ impl GroupFFI {
     /// the welcome messages to send to the new members.
     ///
     /// See [`mls_rs::group::CommitBuilder::add_member`] for details.
-    pub async fn add_members(
+    pub fn add_members(
         &self,
         key_packages: Vec<Arc<MessageFFI>>,
     ) -> Result<CommitOutputFFI, MlSrsError> {

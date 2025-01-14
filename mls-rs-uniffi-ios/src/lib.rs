@@ -298,7 +298,7 @@ mod tests {
 
         let alice_group = alice.create_group(None)?;
         let bob_key_package = bob.generate_key_package_message()?;
-        // let commit = alice_group.add_members(vec![Arc::new(bob_key_package)])?;
+        let commit = alice_group.add_members(vec![Arc::new(bob_key_package)])?;
         // alice_group.process_incoming_message(commit.commit_message)?;
 
         // let bob_group = bob
