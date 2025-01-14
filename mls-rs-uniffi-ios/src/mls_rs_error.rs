@@ -30,6 +30,8 @@ pub enum MlSrsError {
     InconsistentOptionalParameters,
     #[error("Missing Basic Credential")]
     MissingBasicCredential,
+    #[error("Not Implemented")]
+    NotImplemented,
 }
 
 impl IntoAnyError for MlSrsError {}
