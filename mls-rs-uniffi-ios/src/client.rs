@@ -8,7 +8,9 @@ use crate::MlSrsError;
 use std::sync::Arc;
 use std::sync::Mutex;
 
+use mls_rs::error::{IntoAnyError, MlsError};
 use mls_rs::mls_rules::{CommitOptions, DefaultMlsRules, EncryptionOptions};
+use mls_rs::{CipherSuiteProvider, CryptoProvider};
 use mls_rs_core::identity::{BasicCredential, IdentityProvider, SigningIdentity};
 use mls_rs_crypto_cryptokit::CryptoKitProvider;
 
@@ -203,4 +205,32 @@ impl From<SignatureSecretKey> for mls_rs::crypto::SignatureSecretKey {
     fn from(secret_key: SignatureSecretKey) -> Self {
         Self::new(secret_key.bytes)
     }
+}
+
+/// Generate a MLS signature keypair.
+///
+/// This will use the default mls-lite crypto provider.
+///
+/// See [`mls_rs::CipherSuiteProvider::signature_key_generate`]
+/// for details.
+#[maybe_async::must_be_sync]
+#[uniffi::export]
+pub async fn generate_signature_keypair(
+    cipher_suite: CipherSuiteFFI,
+) -> Result<SignatureKeypair, MlSrsError> {
+    let crypto_provider = mls_rs_crypto_cryptokit::CryptoKitProvider::default();
+    let cipher_suite_provider = crypto_provider
+        .cipher_suite_provider(cipher_suite.into())
+        .ok_or(MlsError::UnsupportedCipherSuite(cipher_suite.into()))?;
+
+    let (secret_key, public_key) = cipher_suite_provider
+        .signature_key_generate()
+        .await
+        .map_err(|err| MlsError::CryptoProviderError(err.into_any_error()))?;
+
+    Ok(SignatureKeypair {
+        cipher_suite,
+        public_key: public_key.into(),
+        secret_key: secret_key.into(),
+    })
 }

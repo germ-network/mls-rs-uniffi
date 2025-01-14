@@ -66,7 +66,8 @@ impl TryFrom<mls_rs::ProtocolVersion> for ProtocolVersion {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::client::ClientFFI;
+    use crate::client::{generate_signature_keypair, ClientFFI};
+    use crate::config::group_context::CipherSuiteFFI;
     use crate::config::group_state::{EpochRecordFFI, GroupStateStorageProtocol};
     use crate::config::ClientConfigFFI;
     use crate::group::GroupFFI;
@@ -271,11 +272,11 @@ mod tests {
     // }
 
     fn setup_test() -> Result<(GroupFFI, GroupFFI), MlSrsError> {
-        // let alice_config = ClientConfigFFI {
-        //     group_state_storage: Arc::new(CustomGroupStateStorage::new()),
-        //     ..Default::default()
-        // };
-        // let alice_keypair = generate_signature_keypair(CipherSuite::Curve25519ChaCha)?;
+        let alice_config = ClientConfigFFI {
+            group_state_storage: Arc::new(CustomGroupStateStorage::new()),
+            ..Default::default()
+        };
+        let alice_keypair = generate_signature_keypair(CipherSuiteFFI::Curve25519ChaCha)?;
         // let alice = Client::new(b"alice".to_vec(), alice_keypair, alice_config);
 
         // let bob_config = ClientConfig {
