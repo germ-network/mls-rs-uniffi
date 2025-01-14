@@ -277,17 +277,17 @@ mod tests {
             ..Default::default()
         };
         let alice_keypair = generate_signature_keypair(CipherSuiteFFI::Curve25519ChaCha)?;
-        // let alice = Client::new(b"alice".to_vec(), alice_keypair, alice_config);
+        let alice = ClientFFI::new(b"alice".to_vec(), alice_keypair, alice_config);
 
-        // let bob_config = ClientConfig {
-        //     group_state_storage: Arc::new(CustomGroupStateStorage::new()),
-        //     ..Default::default()
-        // };
-        // let bob_keypair = generate_signature_keypair(CipherSuite::Curve25519ChaCha)?;
-        // let bob = Client::new(b"bob".to_vec(), bob_keypair, bob_config);
+        let bob_config = ClientConfigFFI {
+            group_state_storage: Arc::new(CustomGroupStateStorage::new()),
+            ..Default::default()
+        };
+        let bob_keypair = generate_signature_keypair(CipherSuiteFFI::Curve25519ChaCha)?;
+        let bob = ClientFFI::new(b"bob".to_vec(), bob_keypair, bob_config);
 
-        // let alice_group = alice.create_group(None)?;
-        // let bob_key_package = bob.generate_key_package_message()?;
+        let alice_group = alice.create_group(None)?;
+        let bob_key_package = bob.generate_key_package_message()?;
         // let commit = alice_group.add_members(vec![Arc::new(bob_key_package)])?;
         // alice_group.process_incoming_message(commit.commit_message)?;
 
