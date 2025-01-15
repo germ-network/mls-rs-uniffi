@@ -1,5 +1,7 @@
 use crate::arc_unwrap_or_clone;
 use crate::config::SigningIdentityFFI;
+use crate::message::ProposalFFI;
+use crate::message::ReceivedMessageFFI;
 use crate::MlSrsError;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -8,6 +10,7 @@ use crate::config::UniFFIConfig;
 use crate::message::MessageFFI;
 use crate::ExtensionListFFI;
 use mls_rs::group::proposal::Proposal;
+use mls_rs::group::{CommitEffect, ReceivedMessage};
 use mls_rs::mls_rs_codec::{MlsDecode, MlsEncode};
 
 /// An MLS end-to-end encrypted group.
@@ -56,7 +59,7 @@ pub struct CommitOutputFFI {
     pub group_info: Option<Arc<MessageFFI>>,
 
     /// Proposals that were received in the prior epoch but not included in the following commit.
-    pub unused_proposals: Vec<Arc<ProposalFFI>>,
+    pub unused_proposals: Vec<ProposalFFI>,
 }
 
 impl TryFrom<mls_rs::group::CommitOutput> for CommitOutputFFI {
@@ -75,7 +78,8 @@ impl TryFrom<mls_rs::group::CommitOutput> for CommitOutputFFI {
         let unused_proposals = commit_output
             .unused_proposals
             .into_iter()
-            .map(|proposal_info| Arc::new(proposal_info.proposal.into()))
+            //warning - silently fails - TODO: try_collect
+            .flat_map(|proposal_info| proposal_info.proposal.try_into())
             .collect();
 
         Ok(Self {
@@ -87,55 +91,15 @@ impl TryFrom<mls_rs::group::CommitOutput> for CommitOutputFFI {
     }
 }
 
-#[derive(Clone, Debug, uniffi::Object)]
-pub struct ProposalFFI {
-    _inner: mls_rs::group::proposal::Proposal,
-}
-
-impl From<mls_rs::group::proposal::Proposal> for ProposalFFI {
-    fn from(inner: mls_rs::group::proposal::Proposal) -> Self {
-        Self { _inner: inner }
-    }
-}
-
-#[uniffi::export]
-impl ProposalFFI {
-    pub fn proposal_type(&self) -> u16 {
-        self._inner.proposal_type().raw_value()
-    }
-
-    pub fn signing_identity(&self) -> Option<Arc<SigningIdentityFFI>> {
-        self.signing_identity_inner().map(|s| Arc::new(s))
-    }
-
-    pub fn to_bytes(&self) -> Result<Vec<u8>, MlSrsError> {
-        Ok(self._inner.mls_encode_to_vec()?)
-    }
-
-    pub fn update_bytes(&self) -> Result<Option<Vec<u8>>, MlSrsError> {
-        match self._inner.clone() {
-            mls_rs::group::proposal::Proposal::Update(update) => {
-                Ok(Some(update.mls_encode_to_vec()?))
-            }
-            _ => Ok(None),
-        }
-    }
-}
-
-impl ProposalFFI {
-    pub fn signing_identity_inner(&self) -> Option<SigningIdentityFFI> {
-        match self._inner.clone() {
-            Proposal::Add(p) => Some(p.signing_identity().clone().into()),
-            Proposal::Update(p) => Some(p.signing_identity().clone().into()),
-            Proposal::Replace(p) => Some(p.signing_identity().clone().into()),
-            Proposal::Psk(_) => None,
-            Proposal::ReInit(_) => None,
-            Proposal::ExternalInit(_) => None,
-            Proposal::GroupContextExtensions(_) => None,
-            Proposal::Custom(_) => None,
-            _ => None,
-        }
-    }
+/// Find the identity for the member with a given index.
+fn index_to_identity(
+    group: &mls_rs::Group<UniFFIConfig>,
+    index: u32,
+) -> Result<mls_rs::identity::SigningIdentity, MlSrsError> {
+    let member = group
+        .member_at_index(index)
+        .ok_or(mls_rs::error::MlsError::InvalidNodeIndex(index))?;
+    Ok(member.signing_identity)
 }
 
 #[maybe_async::must_be_async]
@@ -285,51 +249,52 @@ impl GroupFFI {
     //     Ok(mls_message.into())
     // }
 
-    // /// Process an inbound message for this group.
-    // pub async fn process_incoming_message(
-    //     &self,
-    //     message: Arc<Message>,
-    // ) -> Result<ReceivedMessage, MlSrsError> {
-    //     let message = arc_unwrap_or_clone(message);
-    //     let mut group = self.inner().await;
-    //     match group.process_incoming_message(message.inner).await? {
-    //         group::ReceivedMessage::ApplicationMessage(application_message) => {
-    //             let sender =
-    //                 Arc::new(index_to_identity(&group, application_message.sender_index)?.into());
-    //             let data = application_message.data().to_vec();
-    //             let authenticated_data = application_message.authenticated_data.to_vec();
-    //             Ok(ReceivedMessage::ApplicationMessage { sender, data, authenticated_data })
-    //         }
-    //         group::ReceivedMessage::Commit(commit_message) => {
-    //             let committer =
-    //                 Arc::new(index_to_identity(&group, commit_message.committer)?.into());
-    //             let roster_update = RosterUpdate::new(commit_message.state_update.roster_update());
-    //             let authenticated_data = commit_message.authenticated_data.to_vec();
-    //             Ok(ReceivedMessage::Commit {
-    //                 committer,
-    //                 roster_update,
-    //                 authenticated_data
-    //             })
-    //         }
-    //         group::ReceivedMessage::Proposal(proposal_message) => {
-    //             let sender = match proposal_message.sender {
-    //                 mls_rs::group::ProposalSender::Member(index) => {
-    //                     Arc::new(index_to_identity(&group, index)?.into())
-    //                 }
-    //                 _ => todo!("External and NewMember proposal senders are not supported"),
-    //             };
-    //             let proposal = Arc::new(proposal_message.proposal.into());
-    //             let authenticated_data = proposal_message.authenticated_data.to_vec();
-    //             Ok(ReceivedMessage::ReceivedProposal { sender, proposal, authenticated_data })
-    //         }
-    //         // TODO: group::ReceivedMessage::GroupInfo does not have any
-    //         // public methods (unless the "ffi" Cargo feature is set).
-    //         // So perhaps we don't need it?
-    //         group::ReceivedMessage::GroupInfo(_) => Ok(ReceivedMessage::GroupInfo),
-    //         group::ReceivedMessage::Welcome => Ok(ReceivedMessage::Welcome),
-    //         group::ReceivedMessage::KeyPackage(_) => Ok(ReceivedMessage::KeyPackage),
-    //     }
-    // }
+    /// Process an inbound message for this group.
+    pub async fn process_incoming_message(
+        &self,
+        message: Arc<MessageFFI>,
+    ) -> Result<ReceivedMessageFFI, MlSrsError> {
+        let message = arc_unwrap_or_clone(message);
+        let mut group = self.inner();
+        match group.process_incoming_message(message.inner)? {
+            ReceivedMessage::ApplicationMessage(application_message) => {
+                let sender =
+                    Arc::new(index_to_identity(&group, application_message.sender_index)?.into());
+                let data = application_message.data().to_vec();
+                let authenticated_data = application_message.authenticated_data.to_vec();
+                Ok(ReceivedMessageFFI::ApplicationMessage {
+                    sender,
+                    data,
+                    authenticated_data,
+                })
+            }
+            ReceivedMessage::Commit(commit_message) => {
+                let committer =
+                    Arc::new(index_to_identity(&group, commit_message.committer)?.into());
+
+                Ok(ReceivedMessageFFI::Commit {
+                    committer,
+                    effect: commit_message.effect.into(),
+                })
+            }
+            ReceivedMessage::Proposal(proposal_message) => {
+                let sender = match proposal_message.sender {
+                    mls_rs::group::ProposalSender::Member(index) => {
+                        Arc::new(index_to_identity(&group, index)?.into())
+                    }
+                    _ => todo!("External and NewMember proposal senders are not supported"),
+                };
+                let proposal = proposal_message.proposal.try_into()?;
+                Ok(ReceivedMessageFFI::ReceivedProposal { sender, proposal })
+            }
+            // TODO: group::ReceivedMessage::GroupInfo does not have any
+            // public methods (unless the "ffi" Cargo feature is set).
+            // So perhaps we don't need it?
+            ReceivedMessage::GroupInfo(_) => Ok(ReceivedMessageFFI::GroupInfo),
+            ReceivedMessage::Welcome => Ok(ReceivedMessageFFI::Welcome),
+            ReceivedMessage::KeyPackage(_) => Ok(ReceivedMessageFFI::KeyPackage),
+        }
+    }
 
     // //MARK: Germ helpers
     //  /// # Warning

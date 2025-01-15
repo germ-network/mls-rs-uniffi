@@ -1,10 +1,12 @@
 use crate::config::group_context::CipherSuiteFFI;
 use crate::ExtensionListFFI;
+use mls_rs::group::CommitEffect;
 use std::sync::Arc;
 
 use crate::config::SigningIdentityFFI;
 use crate::MlSrsError;
 use mls_rs::error::{IntoAnyError, MlsError};
+use mls_rs::group::proposal::Proposal;
 // use mls_rs::group::message_processor;
 
 ///Matches types in mls_rs::group::message_processor
@@ -52,41 +54,6 @@ impl From<mls_rs::MlsMessage> for MessageFFI {
     }
 }
 
-// #[derive(Clone, Debug, uniffi::Object)]
-// pub struct Proposal {
-//     _inner: mls_rs::group::proposal::Proposal,
-// }
-
-// impl From<mls_rs::group::proposal::Proposal> for Proposal {
-//     fn from(inner: mls_rs::group::proposal::Proposal) -> Self {
-//         Self { _inner: inner }
-//     }
-// }
-
-// #[uniffi::export]
-// impl Proposal {
-//currently unused
-// pub fn proposal_type(&self) -> u16 {
-//     self._inner.proposal_type().raw_value()
-// }
-
-// pub fn signing_identity(&self) -> Option<Arc<SigningIdentityFFI>> {
-//     self._inner.signing_identity()
-//         .map(|s| Arc::new(s.into()))
-// }
-
-// pub fn to_bytes(&self) -> Result<Vec<u8>, MlSrsError> {
-//     Ok(self._inner.mls_encode_to_vec()?)
-// }
-
-// pub fn update_bytes(&self) -> Result<Option<Vec<u8>>, MlSrsError> {
-//     match self._inner.clone() {
-//         mls_rs::group::proposal::Proposal::Update(update) => Ok(Some(update.mls_encode_to_vec()?)),
-//         _ => Ok(None)
-//     }
-// }
-// }
-
 /// Update of a member due to a commit.
 #[derive(Clone, Debug, uniffi::Record)]
 pub struct MemberUpdate {
@@ -96,7 +63,7 @@ pub struct MemberUpdate {
 
 /// A [`mls_rs::group::ReceivedMessage`] wrapper.
 #[derive(Clone, Debug, uniffi::Enum)]
-pub enum ReceivedMessage {
+pub enum ReceivedMessageFFI {
     /// A decrypted application message.
     ///
     /// The encoding of the data in the message is
@@ -108,7 +75,10 @@ pub enum ReceivedMessage {
     },
 
     /// A new commit was processed creating a new group state.
-    Commit(CommitMessageDescriptionFFI),
+    Commit {
+        committer: Arc<SigningIdentityFFI>,
+        effect: CommitEffectFFI,
+    },
 
     // TODO(mgeisler): rename to `Proposal` when
     // https://github.com/awslabs/mls-rs/issues/98 is fixed.
@@ -116,7 +86,6 @@ pub enum ReceivedMessage {
     ReceivedProposal {
         sender: Arc<SigningIdentityFFI>,
         proposal: ProposalFFI,
-        authenticated_data: Vec<u8>,
     },
 
     /// Validated GroupInfo object.
@@ -124,19 +93,7 @@ pub enum ReceivedMessage {
     /// Validated welcome message.
     Welcome,
     /// Validated key package.
-    KeyPackage(Arc<KeyPackageFFI>),
-}
-
-#[derive(Clone, Debug, uniffi::Record)]
-/// Description of a processed MLS commit message.
-pub struct CommitMessageDescriptionFFI {
-    pub is_external: bool,
-    /// The index in the group state of the member who performed this commit.
-    pub committer: u32,
-    /// A full description of group state changes as a result of this commit.
-    pub effect: CommitEffectFFI,
-    /// Plaintext authenticated data in the received MLS packet.
-    pub authenticated_data: Vec<u8>,
+    KeyPackage,
 }
 
 #[derive(Clone, Debug, uniffi::Enum)]
@@ -152,14 +109,67 @@ pub enum CommitEffectFFI {
 #[derive(Clone, Debug, uniffi::Enum)]
 pub enum ProposalFFI {
     // Add(alloc::boxed::Box<AddProposal>),
-    Add,
-    Update(Arc<LeafNodeFFI>),
+    Add(Arc<KeyPackageFFI>),
+    Update(Arc<SigningIdentityFFI>),
     Replace(Arc<ReplaceProposalFFI>),
     Remove(u32), // Psk(PreSharedKeyProposal),
                  // ReInit(ReInitProposal),
                  // ExternalInit(ExternalInit),
                  // GroupContextExtensions(ExtensionList),
                  // Custom(CustomProposal),
+}
+
+// #[uniffi::export]
+// impl ProposalFFI {
+//     pub fn proposal_type(&self) -> u16 {
+//         self._inner.proposal_type().raw_value()
+//     }
+
+//     pub fn signing_identity(&self) -> Option<Arc<SigningIdentityFFI>> {
+//         self.signing_identity_inner().map(|s| Arc::new(s))
+//     }
+
+//     pub fn to_bytes(&self) -> Result<Vec<u8>, MlSrsError> {
+//         Ok(self._inner.mls_encode_to_vec()?)
+//     }
+
+//     pub fn update_bytes(&self) -> Result<Option<Vec<u8>>, MlSrsError> {
+//         match self._inner.clone() {
+//             mls_rs::group::proposal::Proposal::Update(update) => {
+//                 Ok(Some(update.mls_encode_to_vec()?))
+//             }
+//             _ => Ok(None),
+//         }
+//     }
+// }
+
+impl ProposalFFI {
+    pub fn signing_identity(&self) -> Option<Arc<SigningIdentityFFI>> {
+        match self {
+            ProposalFFI::Add(k) => Some(Arc::new(k.leaf_node_signing_identity.clone())),
+            ProposalFFI::Update(s) => Some(s.clone()),
+            ProposalFFI::Replace(r) => Some(Arc::new(r.leaf_node.signing_identity.clone())),
+            ProposalFFI::Remove(_) => None,
+        }
+    }
+}
+
+impl TryFrom<Proposal> for ProposalFFI {
+    type Error = MlSrsError;
+
+    fn try_from(value: Proposal) -> Result<Self, Self::Error> {
+        match value {
+            Proposal::Add(k) => {
+                let key_package = k.key_package().clone();
+                Ok(ProposalFFI::Add(Arc::new(key_package.try_into()?)))
+            }
+            Proposal::Update(u) => {
+                let signing_identity = u.signing_identity().clone();
+                Ok(ProposalFFI::Update(Arc::new(signing_identity.into())))
+            }
+            _ => Ok(ProposalFFI::Remove(0)),
+        }
+    }
 }
 
 #[derive(Clone, Debug, uniffi::Object)]
@@ -173,6 +183,7 @@ pub struct LeafIndexFFI {
     pub index: u32,
 }
 
+//may not get used as leaf nodes are generally crate private
 #[derive(Clone, Debug, uniffi::Object)]
 pub struct LeafNodeFFI {
     // pub public_key: HpkePublicKey,
@@ -202,14 +213,61 @@ pub struct KeyPackageFFI {
     pub version: ProtocolVersionFFI,
     pub cipher_suite: CipherSuiteFFI,
     pub hpke_init_key: Vec<u8>,
-    pub leaf_node: LeafNodeFFI,
+    pub leaf_node_signing_identity: SigningIdentityFFI,
+    // pub leaf_node: LeafNodeFFI,
     pub extensions: ExtensionListFFI,
     pub signature: Vec<u8>,
+}
+
+impl TryFrom<mls_rs::KeyPackage> for KeyPackageFFI {
+    type Error = MlSrsError;
+
+    fn try_from(value: mls_rs::KeyPackage) -> Result<Self, Self::Error> {
+        let signing_identity = value.signing_identity().clone();
+
+        Ok(KeyPackageFFI {
+            version: ProtocolVersionFFI {
+                version: value.version.raw_value(),
+            },
+            cipher_suite: value.cipher_suite.try_into()?,
+            hpke_init_key: value.hpke_init_key.into(),
+            extensions: value.extensions.into(),
+            leaf_node_signing_identity: signing_identity.into(),
+            // leaf_node: value.leaf_node.into(),
+            signature: value.signature,
+        })
+    }
 }
 
 #[derive(Clone, Debug, uniffi::Record)]
 pub struct ProtocolVersionFFI {
     pub version: u16,
+}
+
+impl From<mls_rs::group::CommitEffect> for CommitEffectFFI {
+    fn from(value: mls_rs::group::CommitEffect) -> Self {
+        match value {
+            CommitEffect::NewEpoch(new_epoch) => CommitEffectFFI::NewEpoch {
+                applied_proposals: new_epoch
+                    .applied_proposals
+                    .into_iter()
+                    //warning - silently fails - TODO: try_collect
+                    .flat_map(|p| p.proposal.try_into())
+                    .collect(),
+                unused_proposals: new_epoch
+                    .unused_proposals
+                    .into_iter()
+                    //warning - silently fails - TODO: try_collect
+                    .flat_map(|p| p.proposal.try_into())
+                    .collect(),
+            },
+            CommitEffect::Removed {
+                new_epoch: _,
+                remove_proposal: _,
+            } => CommitEffectFFI::Removed,
+            CommitEffect::ReInit(_) => CommitEffectFFI::ReInit,
+        }
+    }
 }
 
 // /// A member of a MLS group.
