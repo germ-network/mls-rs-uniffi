@@ -10,7 +10,7 @@ use crate::config::UniFFIConfig;
 use crate::message::MessageFFI;
 use crate::ExtensionListFFI;
 use mls_rs::group::proposal::Proposal;
-use mls_rs::group::{CommitEffect, ReceivedMessage};
+use mls_rs::group::ReceivedMessage;
 use mls_rs::mls_rs_codec::{MlsDecode, MlsEncode};
 
 /// An MLS end-to-end encrypted group.
@@ -250,7 +250,7 @@ impl GroupFFI {
     // }
 
     /// Process an inbound message for this group.
-    pub async fn process_incoming_message(
+    pub fn process_incoming_message(
         &self,
         message: Arc<MessageFFI>,
     ) -> Result<ReceivedMessageFFI, MlSrsError> {

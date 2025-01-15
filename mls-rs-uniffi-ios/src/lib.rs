@@ -299,16 +299,10 @@ mod tests {
         let alice_group = alice.create_group(None)?;
         let bob_key_package = bob.generate_key_package_message()?;
         let commit = alice_group.add_members(vec![Arc::new(bob_key_package)])?;
-        // alice_group.process_incoming_message(commit.commit_message)?;
+        alice_group.process_incoming_message(commit.commit_message)?;
 
-        // let bob_group = bob
-        //     .join_group(None, &commit.welcome_message.unwrap())?
-        //     .group;
-        // Ok((
-        //     alice_group,
-        //     arc_unwrap_or_clone(bob_group)
-        // ))
-        Err(MlSrsError::NotImplemented)
+        let bob_group = bob.join_group(&commit.welcome_message.unwrap())?.group;
+        Ok((alice_group, arc_unwrap_or_clone(bob_group)))
     }
 
     #[derive(Debug, Default)]
