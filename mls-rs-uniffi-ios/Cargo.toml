@@ -10,9 +10,9 @@ name = "mls_rs_uniffi_ios"
 
 [dependencies]
 uniffi = { git = "https://github.com/mozilla/uniffi-rs/", version = "0.28.3" }
-mls-rs = { git = "https://github.com/germ-mark/mls-rs/", rev="ffabb3376738572c75f6f33d66d00322d56d8560", features = ["replace_proposal"]}
-mls-rs-core = { git = "https://github.com/germ-mark/mls-rs/", rev="ffabb3376738572c75f6f33d66d00322d56d8560", version = "0.20.0"}
-mls-rs-crypto-cryptokit = { git = "https://github.com/germ-mark/mls-rs/", rev="ffabb3376738572c75f6f33d66d00322d56d8560", version="0.2.0"}
+mls-rs = { git = "https://github.com/germ-mark/mls-rs/", branch="germ-lite-fork"}
+mls-rs-core = { git = "https://github.com/germ-mark/mls-rs/", branch="germ-lite-fork"}
+mls-rs-crypto-cryptokit = { git = "https://github.com/germ-mark/mls-rs/", branch="germ-lite-fork"}
 
 maybe-async = "0.2.10"
 thiserror = "1.0.57"

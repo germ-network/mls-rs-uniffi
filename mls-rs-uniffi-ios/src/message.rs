@@ -263,7 +263,7 @@ impl From<mls_rs::group::CommitEffect> for CommitEffectFFI {
             },
             CommitEffect::Removed {
                 new_epoch: _,
-                remove_proposal: _,
+                remover: _,
             } => CommitEffectFFI::Removed,
             CommitEffect::ReInit(_) => CommitEffectFFI::ReInit,
         }
