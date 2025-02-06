@@ -30,21 +30,8 @@ use crate::mls_rs_error::MlSrsError;
 use mls_rs::error::MlsError;
 use std::sync::Arc;
 
-// pub use config::ClientConfig;
-// use config::UniFFIConfig;
-
 use std::sync::Mutex;
 
-// use mls_rs::group;
-use mls_rs::identity::basic;
-use mls_rs::mls_rs_codec::MlsDecode;
-use mls_rs::mls_rs_codec::MlsEncode;
-use mls_rs::mls_rules;
-use mls_rs::{CipherSuiteProvider, CryptoProvider};
-use mls_rs_core::identity;
-use mls_rs_core::identity::{BasicCredential, IdentityProvider};
-use mls_rs_crypto_cryptokit::CryptoKitProvider;
-// use config::{SigningIdentity, SignatureKeypair, SignatureSecretKey, CipherSuite, ExtensionList};
 
 uniffi::setup_scaffolding!();
 
@@ -167,7 +154,7 @@ mod tests {
 
         //test multiple updates
         let first_update = alice_group.propose_update(None, None, vec![])?;
-        let second_update = alice_group.propose_update(None, None, vec![])?;
+        let _second_update = alice_group.propose_update(None, None, vec![])?;
 
         let _ = bob_group.process_incoming_message(first_update.into())?;
         // assert!(!bob_group.proposal_cache_is_empty());
@@ -182,14 +169,14 @@ mod tests {
         );
         let _ = bob_group.process_incoming_message(commit_output.commit_message.clone())?;
 
-        let result = alice_group.process_incoming_message(commit_output.commit_message)?;
+        let _ = alice_group.process_incoming_message(commit_output.commit_message)?;
 
         Ok(())
     }
 
     #[test]
     fn test_stapled_commit() -> Result<(), MlSrsError> {
-        let (alice_group, bob_group) = setup_test()?;
+        let (alice_group, _bob_group) = setup_test()?;
 
         //empty commit
         let commit_output = alice_group.commit()?;
@@ -203,7 +190,7 @@ mod tests {
             true,
         )?;
 
-        let inner_combined = message.unchecked_auth_data(
+        let _inner_combined = message.unchecked_auth_data(
             mls_rs::group::ContentType::Application as u8,
             Some(mls_rs::group::ContentType::Proposal as u8),
         );
@@ -213,11 +200,11 @@ mod tests {
 
     #[test]
     fn test_propose_then_encrypt() -> Result<(), MlSrsError> {
-        let (alice_group, bob_group) = setup_test()?;
+        let (alice_group, _) = setup_test()?;
         let alice_update = alice_group.propose_update(None, None, vec![])?;
 
-        //This will throw an error as you're required to commit if you've observed a proposal
-        let message = alice_group.encrypt_application_message(
+        //Test that we can disable blocking app messages after processing a proposal
+        let _ = alice_group.encrypt_application_message(
             b"hello, bob",
             alice_update.inner.to_bytes()?,
             true,
@@ -225,72 +212,6 @@ mod tests {
 
         Ok(())
     }
-
-    // #[test]
-    // #[cfg(not(mls_build_async))]
-    // fn test_update_reflect() -> Result<(), MlSrsError> {
-    //     let (alice_group, bob_group) = setup_test()?;
-
-    //     let alice_update = alice_group.propose_update( None, None,vec![] )?;
-    //     alice_group.clear_proposal_cache();
-
-    //     let received_message = bob_group.process_incoming_message(Arc::new(alice_update))?;
-    //     let ReceivedMessage::ReceivedProposal{
-    //         sender,
-    //         proposal,
-    //         authenticated_data
-    //     } = received_message.clone().into() else {
-    //         panic!("Wrong message type: {received_message:?}")
-    //     };
-
-    //     // let reflected = bob_group.reflect_update(
-    //     //     0,
-    //     //     proposal,
-    //     //     vec![]
-    //     // )?;
-
-    //     // let _ = alice_group.process_incoming_message(reflected);
-    //     // let commit = alice_group.commit()?;
-    //     // alice_group.process_incoming_message(commit.commit_message);
-
-    //     Ok(())
-    // }
-
-    // #[test]
-    // #[cfg(not(mls_build_async))]
-    // fn test_ratchet_tree_not_included() -> Result<(), MlSrsError> {
-    //     let alice_config = ClientConfig {
-    //         use_ratchet_tree_extension: true,
-    //         ..ClientConfig::default()
-    //     };
-
-    //     let alice_keypair = generate_signature_keypair(CipherSuite::Curve25519ChaCha)?;
-    //     let alice = Client::new(b"alice".to_vec(), alice_keypair, alice_config);
-    //     let group = alice.create_group(None)?;
-
-    //     assert_eq!(group.commit()?.ratchet_tree, None);
-    //     Ok(())
-    // }
-
-    // #[test]
-    // #[cfg(not(mls_build_async))]
-    // fn test_ratchet_tree_included() -> Result<(), MlSrsError> {
-    //     let alice_config = ClientConfig {
-    //         use_ratchet_tree_extension: false,
-    //         ..ClientConfig::default()
-    //     };
-
-    //     let alice_keypair = generate_signature_keypair(CipherSuite::Curve25519ChaCha)?;
-    //     let alice = Client::new(b"alice".to_vec(), alice_keypair, alice_config);
-    //     let group = alice.create_group(None)?;
-
-    //     let ratchet_tree: group::ExportedTree =
-    //         group.commit()?.ratchet_tree.unwrap().try_into().unwrap();
-    //     group.inner().apply_pending_commit()?;
-
-    //     assert_eq!(ratchet_tree, group.inner().export_tree());
-    //     Ok(())
-    // }
 
     fn setup_test() -> Result<(GroupFFI, GroupFFI), MlSrsError> {
         let alice_config = ClientConfigFFI {

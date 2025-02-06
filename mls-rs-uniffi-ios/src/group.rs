@@ -10,9 +10,7 @@ use std::sync::Mutex;
 use crate::config::UniFFIConfig;
 use crate::message::MessageFFI;
 use crate::ExtensionListFFI;
-use mls_rs::group::proposal::Proposal;
 use mls_rs::group::ReceivedMessage;
-use mls_rs::mls_rs_codec::{MlsDecode, MlsEncode};
 
 /// An MLS end-to-end encrypted group.
 ///

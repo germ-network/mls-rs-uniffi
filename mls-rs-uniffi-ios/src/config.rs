@@ -4,7 +4,6 @@ use std::sync::Arc;
 
 use mls_rs::{
     client_builder::{self, WithGroupStateStorage, WithKeyPackageRepo},
-    error::{IntoAnyError, MlsError},
     storage_provider::in_memory::InMemoryGroupStateStorage,
     storage_provider::in_memory::InMemoryKeyPackageStorage,
     time::MlsTime,
@@ -21,7 +20,6 @@ use self::group_state::{
 };
 use crate::config::member_validation_context::MemberValidationContextFFI;
 
-// use self::group_state::{KeyPackageStorageFfi, GroupStateStorage, GroupStateStorageAdapter, KeyPackageStorageAdapter};
 use crate::mls_rs_error::MlSrsError;
 
 pub mod group_context;

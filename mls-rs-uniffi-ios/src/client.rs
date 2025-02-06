@@ -11,7 +11,7 @@ use std::sync::Mutex;
 use mls_rs::error::{IntoAnyError, MlsError};
 use mls_rs::mls_rules::{CommitOptions, DefaultMlsRules, EncryptionOptions};
 use mls_rs::{CipherSuiteProvider, CryptoProvider};
-use mls_rs_core::identity::{BasicCredential, IdentityProvider, SigningIdentity};
+use mls_rs_core::identity::{BasicCredential, SigningIdentity};
 use mls_rs_crypto_cryptokit::CryptoKitProvider;
 
 /// An MLS client used to create key packages and manage groups.
