@@ -187,33 +187,29 @@ mod tests {
         Ok(())
     }
 
-    // #[test]
-    // #[cfg(not(mls_build_async))]
-    // fn test_stapled_commit() -> Result<(), MlSrsError> {
-    //     let (alice_group, bob_group) = setup_test()?;
+    #[test]
+    fn test_stapled_commit() -> Result<(), MlSrsError> {
+        let (alice_group, bob_group) = setup_test()?;
 
-    //     //empty commit
-    //     let commit_output = alice_group.commit()?;
-    //     let _ = alice_group.process_incoming_message(commit_output.clone().commit_message)?;
-    //     let update = alice_group.propose_update(
-    //         None,
-    //         None,
-    //         commit_output.commit_message.to_bytes()?
-    //     )?;
-    //     alice_group.clear_proposal_cache();
-    //     let message = alice_group.encrypt_application_message(
-    //          b"hello, bob",
-    //          update.inner.to_bytes()?
-    //     )?;
+        //empty commit
+        let commit_output = alice_group.commit()?;
+        let _ = alice_group.process_incoming_message(commit_output.clone().commit_message)?;
+        let update =
+            alice_group.propose_update(None, None, commit_output.commit_message.to_bytes()?)?;
 
-    //     let inner_combined = extract_unchecked_authdata(
-    //         mls_rs::group::ContentType::Application as u8,
-    //         Some(mls_rs::group::ContentType::Proposal as u8),
-    //         Arc::new(message)
-    //     );
+        let message = alice_group.encrypt_application_message(
+            b"hello, bob",
+            update.inner.to_bytes()?,
+            true,
+        )?;
 
-    //     Ok(())
-    // }
+        let inner_combined = message.unchecked_auth_data(
+            mls_rs::group::ContentType::Application as u8,
+            Some(mls_rs::group::ContentType::Proposal as u8),
+        );
+
+        Ok(())
+    }
 
     #[test]
     fn test_propose_then_encrypt() -> Result<(), MlSrsError> {
