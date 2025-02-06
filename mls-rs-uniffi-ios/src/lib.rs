@@ -24,8 +24,8 @@ pub mod message;
 pub mod mls_rs_error;
 
 use crate::config::group_context::ExtensionListFFI;
-use crate::mls_rs_error::MlSrsError;
 use crate::message::ReceivedMessageFFI;
+use crate::mls_rs_error::MlSrsError;
 
 use mls_rs::error::MlsError;
 use std::sync::Arc;
@@ -94,7 +94,12 @@ mod tests {
 
         alice_group.write_to_storage()?;
 
-        let ReceivedMessageFFI::ApplicationMessage { sender: _, data, authenticated_data: _ } = received_message else {
+        let ReceivedMessageFFI::ApplicationMessage {
+            sender: _,
+            data,
+            authenticated_data: _,
+        } = received_message
+        else {
             panic!("Wrong message type: {received_message:?}");
         };
         assert_eq!(data, b"hello, bob");
@@ -111,57 +116,61 @@ mod tests {
 
         alice_group.write_to_storage()?;
 
-        let ReceivedMessageFFI::ApplicationMessage { sender: _, data, authenticated_data: _ } = received_message else {
+        let ReceivedMessageFFI::ApplicationMessage {
+            sender: _,
+            data,
+            authenticated_data: _,
+        } = received_message
+        else {
             panic!("Wrong message type: {received_message:?}");
         };
         assert_eq!(data, b"hello, bob");
 
-        //     //adding on additional germ steps here
-        //     let update = bob_group.propose_update( None, None,vec![] )?;
-        //     let _ = bob_group.process_incoming_message(update.clone().into())?;
+        //adding on additional germ steps here
+        let update = bob_group.propose_update( None, None,vec![] )?;
+        let _ = bob_group.process_incoming_message(update.clone().into())?;
 
-        //     let commit_output = bob_group.commit()?;
-        //     println!("commit_output unused {:?}", commit_output.unused_proposals.len());
-        //     let _ = bob_group.process_incoming_message(commit_output.commit_message.clone());
-        //     let next_message = bob_group.encrypt_application_message(
-        //         b"hello, alice",
-        //         commit_output.commit_message.to_bytes()?
-        //     )?;
+        let commit_output = bob_group.commit()?;
+        println!("commit_output unused {:?}", commit_output.unused_proposals.len());
+        let _ = bob_group.process_incoming_message(commit_output.commit_message.clone());
+        let next_message = bob_group.encrypt_application_message(
+            b"hello, alice",
+            commit_output.commit_message.to_bytes()?
+        )?;
 
-        //     let extracted_commit_maybe = extract_unchecked_authdata(
-        //         mls_rs::group::ContentType::Application as u8,
-        //         Some(mls_rs::group::ContentType::Commit as u8),
-        //         Arc::new(next_message.clone())
-        //     )?;
+        let extracted_commit_maybe = next_message.unchecked_auth_data(
+            mls_rs::group::ContentType::Application as u8,
+            Some(mls_rs::group::ContentType::Commit as u8),
+        )?;
 
-        //     let Some(extracted_commit) = extracted_commit_maybe else {
-        //         panic!("Error unwrapping extracted commit")
-        //     };
+        let Some(extracted_commit) = extracted_commit_maybe else {
+            panic!("Error unwrapping extracted commit")
+        };
 
-        //     let _ = alice_group.process_incoming_message(extracted_commit.into());
-        //     let received = alice_group.process_incoming_message(Arc::new(next_message))?;
+        let _ = alice_group.process_incoming_message(extracted_commit.into());
+        let received = alice_group.process_incoming_message(Arc::new(next_message))?;
 
-        //     let ReceivedMessage::ApplicationMessage { sender: _, data: next_data, authenticated_data: _ } = received else {
-        //         panic!("Wrong message type: {received:?}");
-        //     };
+        let ReceivedMessageFFI::ApplicationMessage { sender: _, data: next_data, authenticated_data: _ } = received else {
+            panic!("Wrong message type: {received:?}");
+        };
 
-        //     assert_eq!(next_data, b"hello, alice");
+        assert_eq!(next_data, b"hello, alice");
 
-        //     //test multiple updates
-        //     let first_update = alice_group.propose_update( None, None,vec![] )?;
-        //     let second_update = alice_group.propose_update( None, None,vec![] )?;
+        //test multiple updates
+        let first_update = alice_group.propose_update( None, None,vec![] )?;
+        let second_update = alice_group.propose_update( None, None,vec![] )?;
 
-        //     let _ = bob_group.process_incoming_message(first_update.into())?;
-        //     assert!(!bob_group.proposal_cache_is_empty());
-        //     bob_group.clear_proposal_cache();
-        //     assert!(bob_group.proposal_cache_is_empty());
-        //     // let _ = bob_group.process_incoming_message(second_update.into())?;
+        let _ = bob_group.process_incoming_message(first_update.into())?;
+        // assert!(!bob_group.proposal_cache_is_empty());
+        // bob_group.clear_proposal_cache();
+        // assert!(bob_group.proposal_cache_is_empty());
+        // let _ = bob_group.process_incoming_message(second_update.into())?;
 
-        //     let commit_output = bob_group.commit()?;
-        //     println!("commit_output unused {:?}", commit_output.unused_proposals.len());
-        //     let _ = bob_group.process_incoming_message(commit_output.commit_message.clone())?;
+        let commit_output = bob_group.commit()?;
+        println!("commit_output unused {:?}", commit_output.unused_proposals.len());
+        let _ = bob_group.process_incoming_message(commit_output.commit_message.clone())?;
 
-        //     let result = alice_group.process_incoming_message(commit_output.commit_message)?;
+        let result = alice_group.process_incoming_message(commit_output.commit_message)?;
 
         Ok(())
     }

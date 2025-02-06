@@ -30,6 +30,8 @@ pub enum MlSrsError {
     InconsistentOptionalParameters,
     #[error("Missing Basic Credential")]
     MissingBasicCredential,
+    #[error("Unexpected Message Format")]
+    UnexpectedMessageTypeDetailed(u8, u8),
     #[error("Not Implemented")]
     NotImplemented,
 }

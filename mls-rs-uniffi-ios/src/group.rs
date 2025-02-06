@@ -1,4 +1,5 @@
 use crate::arc_unwrap_or_clone;
+use crate::config::SignatureSecretKeyFFI;
 use crate::config::SigningIdentityFFI;
 use crate::message::ProposalFFI;
 use crate::message::ReceivedMessageFFI;
@@ -122,18 +123,18 @@ impl GroupFFI {
     //     group.export_tree().try_into()
     // }
 
-    // /// Perform a commit of received proposals (or an empty commit).
-    // ///
-    // /// TODO: ensure `path_required` is always set in
-    // /// [`MlsRules::commit_options`](`mls_rs::MlsRules::commit_options`).
-    // ///
-    // /// Returns the resulting commit message. See
-    // /// [`mls_rs::Group::commit`] for details.
-    // pub async fn commit(&self) -> Result<CommitOutput, MlSrsError> {
-    //     let mut group = self.inner().await;
-    //     let commit_output = group.commit(Vec::new()).await?;
-    //     commit_output.try_into()
-    // }
+    /// Perform a commit of received proposals (or an empty commit).
+    ///
+    /// TODO: ensure `path_required` is always set in
+    /// [`MlsRules::commit_options`](`mls_rs::MlsRules::commit_options`).
+    ///
+    /// Returns the resulting commit message. See
+    /// [`mls_rs::Group::commit`] for details.
+    pub fn commit(&self) -> Result<CommitOutputFFI, MlSrsError> {
+        let mut group = self.inner();
+        let commit_output = group.commit(Vec::new())?;
+        commit_output.try_into()
+    }
 
     /// Commit the addition of one or more members.
     ///
@@ -322,30 +323,28 @@ impl GroupFFI {
     //     self.inner().await.current_member_index()
     // }
 
-    // //for proposing in my own group
-    // pub async fn propose_update (
-    //     &self,
-    //     signer: Option<SignatureSecretKey>,
-    //     signing_identity: Option<Arc<SigningIdentity>>,
-    //     authenticated_data: Vec<u8>
-    // ) -> Result<Message, MlSrsError> {
-    //     let mut group = self.inner().await;
+    //for proposing in my own group
+    pub fn propose_update(
+        &self,
+        signer: Option<SignatureSecretKeyFFI>,
+        signing_identity: Option<Arc<SigningIdentityFFI>>,
+        authenticated_data: Vec<u8>,
+    ) -> Result<MessageFFI, MlSrsError> {
+        let mut group = self.inner();
 
-    //     match (signer, signing_identity) {
-    //         (Some(signer), Some(signing_identity)) => {
-    //             let message = group.propose_update_with_identity(
-    //                 signer.into(),
-    //                 arc_unwrap_or_clone(signing_identity).inner,
-    //                 authenticated_data
-    //             );
-    //             Ok(message?.into())
-    //         },
-    //         (None, None) => {
-    //             Ok(group.propose_update(authenticated_data)?.into())
-    //         },
-    //         _ => Err(MlSrsError::InconsistentOptionalParameters)
-    //     }
-    // }
+        match (signer, signing_identity) {
+            (Some(signer), Some(signing_identity)) => {
+                let message = group.propose_update_with_identity(
+                    signer.into(),
+                    arc_unwrap_or_clone(signing_identity).inner,
+                    authenticated_data,
+                );
+                Ok(message?.into())
+            }
+            (None, None) => Ok(group.propose_update(authenticated_data)?.into()),
+            _ => Err(MlSrsError::InconsistentOptionalParameters),
+        }
+    }
 
     // pub async fn clear_proposal_cache(&self) {
     //     self.inner().await.clear_proposal_cache()
