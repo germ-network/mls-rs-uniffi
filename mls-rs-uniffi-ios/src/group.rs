@@ -105,12 +105,12 @@ fn index_to_identity(
 #[maybe_async::must_be_async]
 #[uniffi::export]
 impl GroupFFI {
-    // /// Write the current state of the group to storage defined by
-    // /// [`ClientConfig::group_state_storage`]
-    // pub async fn write_to_storage(&self) -> Result<(), MlSrsError> {
-    //     let mut group = self.inner().await;
-    //     group.write_to_storage().await.map_err(Into::into)
-    // }
+    /// Write the current state of the group to storage defined by
+    /// [`ClientConfig::group_state_storage`]
+    pub fn write_to_storage(&self) -> Result<(), MlSrsError> {
+        let mut group = self.inner();
+        group.write_to_storage().map_err(Into::into)
+    }
 
     // /// Export the current epoch's ratchet tree in serialized format.
     // ///
@@ -237,7 +237,7 @@ impl GroupFFI {
     /// The other group members will find the message in
     /// [`ReceivedMessage::ApplicationMessage`] after calling
     /// [`Group::process_incoming_message`].
-    pub async fn encrypt_application_message(
+    pub fn encrypt_application_message(
         &self,
         message: &[u8],
         authenticated_data: Vec<u8>,

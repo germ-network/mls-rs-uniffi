@@ -87,10 +87,10 @@ mod tests {
     #[test]
     fn test_simple_scenario() -> Result<(), MlSrsError> {
         let (alice_group, bob_group) = setup_test()?;
-        let message = alice_group.encrypt_application_message(b"hello, bob", vec![]);
-        //     let received_message = bob_group.process_incoming_message(Arc::new(message))?;
+        let message = alice_group.encrypt_application_message(b"hello, bob", vec![])?;
+        let received_message = bob_group.process_incoming_message(Arc::new(message))?;
 
-        //     alice_group.write_to_storage()?;
+        alice_group.write_to_storage()?;
 
         //     let ReceivedMessage::ApplicationMessage { sender: _, data, authenticated_data: _ } = received_message else {
         //         panic!("Wrong message type: {received_message:?}");
@@ -104,10 +104,10 @@ mod tests {
     fn test_germ_scenario() -> Result<(), MlSrsError> {
         let (alice_group, bob_group) = setup_test()?;
 
-        let message = alice_group.encrypt_application_message(b"hello, bob", vec![]);
-        //     let received_message = bob_group.process_incoming_message(Arc::new(message))?;
+        let message = alice_group.encrypt_application_message(b"hello, bob", vec![])?;
+        let received_message = bob_group.process_incoming_message(Arc::new(message));
 
-        //     alice_group.write_to_storage()?;
+        alice_group.write_to_storage()?;
 
         //     let ReceivedMessage::ApplicationMessage { sender: _, data, authenticated_data: _ } = received_message else {
         //         panic!("Wrong message type: {received_message:?}");
