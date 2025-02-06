@@ -242,9 +242,14 @@ impl GroupFFI {
         &self,
         message: &[u8],
         authenticated_data: Vec<u8>,
+        allow_self_proposals: bool,
     ) -> Result<MessageFFI, MlSrsError> {
         let mut group = self.inner();
-        let mls_message = group.encrypt_application_message(message, authenticated_data)?;
+        let mls_message = group.encrypt_application_message_germ(
+            message,
+            authenticated_data,
+            allow_self_proposals,
+        )?;
         Ok(mls_message.into())
     }
 

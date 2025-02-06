@@ -89,7 +89,7 @@ mod tests {
     #[test]
     fn test_simple_scenario() -> Result<(), MlSrsError> {
         let (alice_group, bob_group) = setup_test()?;
-        let message = alice_group.encrypt_application_message(b"hello, bob", vec![])?;
+        let message = alice_group.encrypt_application_message(b"hello, bob", vec![], false)?;
         let received_message = bob_group.process_incoming_message(Arc::new(message))?;
 
         alice_group.write_to_storage()?;
@@ -111,7 +111,7 @@ mod tests {
     fn test_germ_scenario() -> Result<(), MlSrsError> {
         let (alice_group, bob_group) = setup_test()?;
 
-        let message = alice_group.encrypt_application_message(b"hello, bob", vec![])?;
+        let message = alice_group.encrypt_application_message(b"hello, bob", vec![], false)?;
         let received_message = bob_group.process_incoming_message(Arc::new(message))?;
 
         alice_group.write_to_storage()?;
@@ -127,15 +127,19 @@ mod tests {
         assert_eq!(data, b"hello, bob");
 
         //adding on additional germ steps here
-        let update = bob_group.propose_update( None, None,vec![] )?;
+        let update = bob_group.propose_update(None, None, vec![])?;
         let _ = bob_group.process_incoming_message(update.clone().into())?;
 
         let commit_output = bob_group.commit()?;
-        println!("commit_output unused {:?}", commit_output.unused_proposals.len());
+        println!(
+            "commit_output unused {:?}",
+            commit_output.unused_proposals.len()
+        );
         let _ = bob_group.process_incoming_message(commit_output.commit_message.clone());
         let next_message = bob_group.encrypt_application_message(
             b"hello, alice",
-            commit_output.commit_message.to_bytes()?
+            commit_output.commit_message.to_bytes()?,
+            false,
         )?;
 
         let extracted_commit_maybe = next_message.unchecked_auth_data(
@@ -150,15 +154,20 @@ mod tests {
         let _ = alice_group.process_incoming_message(extracted_commit.into());
         let received = alice_group.process_incoming_message(Arc::new(next_message))?;
 
-        let ReceivedMessageFFI::ApplicationMessage { sender: _, data: next_data, authenticated_data: _ } = received else {
+        let ReceivedMessageFFI::ApplicationMessage {
+            sender: _,
+            data: next_data,
+            authenticated_data: _,
+        } = received
+        else {
             panic!("Wrong message type: {received:?}");
         };
 
         assert_eq!(next_data, b"hello, alice");
 
         //test multiple updates
-        let first_update = alice_group.propose_update( None, None,vec![] )?;
-        let second_update = alice_group.propose_update( None, None,vec![] )?;
+        let first_update = alice_group.propose_update(None, None, vec![])?;
+        let second_update = alice_group.propose_update(None, None, vec![])?;
 
         let _ = bob_group.process_incoming_message(first_update.into())?;
         // assert!(!bob_group.proposal_cache_is_empty());
@@ -167,7 +176,10 @@ mod tests {
         // let _ = bob_group.process_incoming_message(second_update.into())?;
 
         let commit_output = bob_group.commit()?;
-        println!("commit_output unused {:?}", commit_output.unused_proposals.len());
+        println!(
+            "commit_output unused {:?}",
+            commit_output.unused_proposals.len()
+        );
         let _ = bob_group.process_incoming_message(commit_output.commit_message.clone())?;
 
         let result = alice_group.process_incoming_message(commit_output.commit_message)?;
@@ -203,20 +215,20 @@ mod tests {
     //     Ok(())
     // }
 
-    // #[test]
-    // #[cfg(not(mls_build_async))]
-    // fn test_propose_then_encrypt() -> Result<(), MlSrsError> {
-    //     let (alice_group, bob_group) = setup_test()?;
-    //     let alice_update = alice_group.propose_update( None, None,vec![] )?;
+    #[test]
+    fn test_propose_then_encrypt() -> Result<(), MlSrsError> {
+        let (alice_group, bob_group) = setup_test()?;
+        let alice_update = alice_group.propose_update(None, None, vec![])?;
 
-    //     //This will throw an error as you're required to commit if you've observed a proposal
-    //     // let message = alice_group.encrypt_application_message(
-    //     //      b"hello, bob",
-    //     //      alice_update.inner.to_bytes()?
-    //     // )?;
+        //This will throw an error as you're required to commit if you've observed a proposal
+        let message = alice_group.encrypt_application_message(
+            b"hello, bob",
+            alice_update.inner.to_bytes()?,
+            true,
+        )?;
 
-    //     Ok(())
-    // }
+        Ok(())
+    }
 
     // #[test]
     // #[cfg(not(mls_build_async))]

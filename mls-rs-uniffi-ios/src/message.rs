@@ -1,7 +1,7 @@
-use mls_rs::MlsMessage;
 use crate::config::group_context::CipherSuiteFFI;
 use crate::ExtensionListFFI;
 use mls_rs::group::CommitEffect;
+use mls_rs::MlsMessage;
 use std::sync::Arc;
 
 use crate::config::SigningIdentityFFI;
@@ -51,28 +51,36 @@ impl MessageFFI {
         let ciphertext_maybe = self.inner.private_message();
 
         let Some(ciphertext) = ciphertext_maybe else {
-            return Err(MlSrsError::MlsError { inner: MlsError::UnexpectedMessageType})
+            return Err(MlSrsError::MlsError {
+                inner: MlsError::UnexpectedMessageType,
+            });
         };
         if ciphertext.content_type as u8 != expected_outer_type {
-            return Err(MlSrsError::UnexpectedMessageTypeDetailed(expected_outer_type,
-                    ciphertext.content_type as u8) )
+            return Err(MlSrsError::UnexpectedMessageTypeDetailed(
+                expected_outer_type,
+                ciphertext.content_type as u8,
+            ));
         }
 
         if ciphertext.authenticated_data.is_empty() {
-            return Ok(None)
+            return Ok(None);
         }
 
-        let inner_message = MlsMessage::from_bytes( ciphertext.authenticated_data.as_slice() )?;
-        let inner_content_type = inner_message.clone()
+        let inner_message = MlsMessage::from_bytes(ciphertext.authenticated_data.as_slice())?;
+        let inner_content_type = inner_message
+            .clone()
             .private_message()
             .map(|c| c.content_type as u8);
         if inner_content_type != expected_inner_type {
-            return Err(MlSrsError::UnexpectedMessageTypeDetailed(expected_inner_type.unwrap_or(0),
-                    inner_content_type.unwrap_or(0)) )
+            return Err(MlSrsError::UnexpectedMessageTypeDetailed(
+                expected_inner_type.unwrap_or(0),
+                inner_content_type.unwrap_or(0),
+            ));
         }
 
-        Ok(Some(Arc::new(MessageFFI { inner: inner_message })))
-
+        Ok(Some(Arc::new(MessageFFI {
+            inner: inner_message,
+        })))
     }
 }
 
