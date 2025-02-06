@@ -32,7 +32,6 @@ use std::sync::Arc;
 
 use std::sync::Mutex;
 
-
 uniffi::setup_scaffolding!();
 
 #[derive(Copy, Clone, Debug, uniffi::Enum)]
@@ -112,6 +111,13 @@ mod tests {
             panic!("Wrong message type: {received_message:?}");
         };
         assert_eq!(data, b"hello, bob");
+        assert_eq!(alice_group.current_epoch(), 1);
+        assert_eq!(bob_group.current_epoch(), 1);
+
+        assert_eq!(alice_group.current_member_index(), 0);
+        assert_eq!(bob_group.current_member_index(), 1);
+
+        assert_eq!(alice_group.group_id(), bob_group.group_id());
 
         //adding on additional germ steps here
         let update = bob_group.propose_update(None, None, vec![])?;
@@ -200,7 +206,7 @@ mod tests {
 
     #[test]
     fn test_propose_then_encrypt() -> Result<(), MlSrsError> {
-        let (alice_group, _) = setup_test()?;
+        let (alice_group, _bob_group) = setup_test()?;
         let alice_update = alice_group.propose_update(None, None, vec![])?;
 
         //Test that we can disable blocking app messages after processing a proposal

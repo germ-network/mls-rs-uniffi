@@ -175,6 +175,8 @@ impl GroupFFI {
     //     Ok(messages)
     // }
 
+    //bring this back for MultiMLS leave
+
     // /// Propose and commit the removal of one or more members.
     // ///
     // /// The members are representated by their signing identities.
@@ -304,27 +306,27 @@ impl GroupFFI {
     // /// The indexes within this roster do not correlate with indexes of users
     // /// within [`ReceivedMessage`] content descriptions due to the layout of
     // /// member information within a MLS group state.
-    // pub async fn members(&self) -> Vec<MLSMember> {
-    //     // let group = self.inner().await;
-    //     self.inner().await
-    //         .roster()
-    //         .members()
-    //         .iter()
-    //         .map(|member| member.clone().into() )
-    //         .collect()
-    // }
+    pub fn members(&self) -> Vec<MLSMemberFFI> {
+        // let group = self.inner().await;
+        self.inner()
+            .roster()
+            .members()
+            .iter()
+            .map(|member| member.clone().into())
+            .collect()
+    }
 
-    // pub async fn group_id(&self) -> Vec<u8> {
-    //     self.inner().await.group_id().to_vec()
-    // }
+    pub fn group_id(&self) -> Vec<u8> {
+        self.inner().group_id().to_vec()
+    }
 
-    // pub async fn current_epoch(&self) -> u64 {
-    //     self.inner().await.current_epoch()
-    // }
+    pub fn current_epoch(&self) -> u64 {
+        self.inner().current_epoch()
+    }
 
-    // pub async fn current_member_index(&self) -> u32 {
-    //     self.inner().await.current_member_index()
-    // }
+    pub fn current_member_index(&self) -> u32 {
+        self.inner().current_member_index()
+    }
 
     //for proposing in my own group
     pub fn propose_update(
@@ -357,10 +359,11 @@ impl GroupFFI {
     //     self.inner().await.proposal_cache_is_empty()
     // }
 
-    // pub async fn member_at_index(&self, index: u32) -> Option<MLSMember> {
-    //     self.inner().await.member_at_index(index)
-    //         .map(|message| message.into())
-    // }
+    pub fn member_at_index(&self, index: u32) -> Option<MLSMemberFFI> {
+        self.inner()
+            .member_at_index(index)
+            .map(|message| message.into())
+    }
 
     // //Propose replace from update
     // pub async fn propose_replace_from_update(
@@ -437,4 +440,20 @@ impl GroupFFI {
     //         .to_vec();
     //     Ok(result)
     // }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, uniffi::Record)]
+pub struct MLSMemberFFI {
+    pub index: u32,
+    /// Current identity public key and credential of this member.
+    pub signing_identity: Arc<SigningIdentityFFI>,
+}
+
+impl From<mls_rs::group::Member> for MLSMemberFFI {
+    fn from(inner: mls_rs::group::Member) -> Self {
+        Self {
+            index: inner.index,
+            signing_identity: Arc::new(inner.signing_identity.clone().into()),
+        }
+    }
 }

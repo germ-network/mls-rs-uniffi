@@ -147,7 +147,7 @@ pub enum ProposalFFI {
     // Add(alloc::boxed::Box<AddProposal>),
     Add(Arc<KeyPackageFFI>),
     Update(Arc<SigningIdentityFFI>),
-    Replace(Arc<ReplaceProposalFFI>),
+    // Replace(Arc<ReplaceProposalFFI>),
     Remove(u32), // Psk(PreSharedKeyProposal),
                  // ReInit(ReInitProposal),
                  // ExternalInit(ExternalInit),
@@ -184,7 +184,7 @@ impl ProposalFFI {
         match self {
             ProposalFFI::Add(k) => Some(Arc::new(k.leaf_node_signing_identity.clone())),
             ProposalFFI::Update(s) => Some(s.clone()),
-            ProposalFFI::Replace(r) => Some(Arc::new(r.leaf_node.signing_identity.clone())),
+            // ProposalFFI::Replace(r) => Some(Arc::new(r.leaf_node.signing_identity.clone())),
             ProposalFFI::Remove(_) => None,
         }
     }
@@ -208,11 +208,11 @@ impl TryFrom<Proposal> for ProposalFFI {
     }
 }
 
-#[derive(Clone, Debug, uniffi::Object)]
-pub struct ReplaceProposalFFI {
-    pub(crate) to_replace: LeafIndexFFI,
-    pub(crate) leaf_node: LeafNodeFFI,
-}
+// #[derive(Clone, Debug, uniffi::Object)]
+// pub struct ReplaceProposalFFI {
+//     pub(crate) to_replace: LeafIndexFFI,
+//     pub(crate) leaf_node: LeafNodeFFI,
+// }
 
 #[derive(Clone, Debug, uniffi::Record)]
 pub struct LeafIndexFFI {

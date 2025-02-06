@@ -27,7 +27,7 @@ pub mod group_state;
 pub mod member_validation_context;
 
 #[derive(Debug, Clone)]
-pub(crate) struct ClientKeyPackageStorage(Arc<dyn KeyPackageStorageProtocol>);
+pub struct ClientKeyPackageStorage(Arc<dyn KeyPackageStorageProtocol>);
 
 impl From<Arc<dyn KeyPackageStorageProtocol>> for ClientKeyPackageStorage {
     fn from(value: Arc<dyn KeyPackageStorageProtocol>) -> Self {
@@ -66,7 +66,7 @@ impl mls_rs_core::key_package::KeyPackageStorage for ClientKeyPackageStorage {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct ClientGroupStorage(Arc<dyn GroupStateStorageProtocol>);
+pub struct ClientGroupStorage(Arc<dyn GroupStateStorageProtocol>);
 
 impl From<Arc<dyn GroupStateStorageProtocol>> for ClientGroupStorage {
     fn from(value: Arc<dyn GroupStateStorageProtocol>) -> Self {
@@ -301,7 +301,7 @@ pub trait IdentityProviderProtocol: Send + Sync + Debug {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct IdentityProviderStorage(Arc<dyn IdentityProviderProtocol>);
+pub struct IdentityProviderStorage(Arc<dyn IdentityProviderProtocol>);
 
 impl From<Arc<dyn IdentityProviderProtocol>> for IdentityProviderStorage {
     fn from(value: Arc<dyn IdentityProviderProtocol>) -> Self {
