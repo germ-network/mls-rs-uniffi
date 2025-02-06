@@ -306,13 +306,13 @@ impl GroupFFI {
     // /// The indexes within this roster do not correlate with indexes of users
     // /// within [`ReceivedMessage`] content descriptions due to the layout of
     // /// member information within a MLS group state.
-    pub fn members(&self) -> Vec<MLSMemberFFI> {
+    pub fn members(&self) -> Vec<Arc<MLSMemberFFI>> {
         // let group = self.inner().await;
         self.inner()
             .roster()
             .members()
             .iter()
-            .map(|member| member.clone().into())
+            .map(|member| Arc::new(member.clone().into()))
             .collect()
     }
 
@@ -359,10 +359,10 @@ impl GroupFFI {
     //     self.inner().await.proposal_cache_is_empty()
     // }
 
-    pub fn member_at_index(&self, index: u32) -> Option<MLSMemberFFI> {
+    pub fn member_at_index(&self, index: u32) -> Option<Arc<MLSMemberFFI>> {
         self.inner()
             .member_at_index(index)
-            .map(|message| message.into())
+            .map(|message| Arc::new(message.into()))
     }
 
     // //Propose replace from update
@@ -442,7 +442,8 @@ impl GroupFFI {
     // }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, uniffi::Record)]
+#[derive(Clone, Debug, PartialEq, Eq, uniffi::Object)]
+#[uniffi::export(Eq)]
 pub struct MLSMemberFFI {
     pub index: u32,
     /// Current identity public key and credential of this member.

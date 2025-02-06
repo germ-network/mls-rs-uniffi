@@ -2540,6 +2540,126 @@ public func FfiConverterTypeLeafNodeFFI_lower(_ value: LeafNodeFfi) -> UnsafeMut
 
 
 
+public protocol MlsMemberFfiProtocol: AnyObject {
+    
+}
+open class MlsMemberFfi: MlsMemberFfiProtocol, @unchecked Sendable {
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noPointer: NoPointer) {
+        self.pointer = nil
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_mls_rs_uniffi_ios_fn_clone_mlsmemberffi(self.pointer, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_mls_rs_uniffi_ios_fn_free_mlsmemberffi(pointer, $0) }
+    }
+
+    
+
+    
+    public static func == (self: MlsMemberFfi, other: MlsMemberFfi) -> Bool {
+        return try!  FfiConverterBool.lift(
+            try! rustCall() {
+    uniffi_mls_rs_uniffi_ios_fn_method_mlsmemberffi_uniffi_trait_eq_eq(self.uniffiClonePointer(),
+        FfiConverterTypeMLSMemberFFI_lower(other),$0
+    )
+}
+        )
+    }
+
+}
+extension MlsMemberFfi: Equatable {}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeMLSMemberFFI: FfiConverter {
+
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = MlsMemberFfi
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> MlsMemberFfi {
+        return MlsMemberFfi(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: MlsMemberFfi) -> UnsafeMutableRawPointer {
+        return value.uniffiClonePointer()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> MlsMemberFfi {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: MlsMemberFfi, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeMLSMemberFFI_lift(_ pointer: UnsafeMutableRawPointer) throws -> MlsMemberFfi {
+    return try FfiConverterTypeMLSMemberFFI.lift(pointer)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeMLSMemberFFI_lower(_ value: MlsMemberFfi) -> UnsafeMutableRawPointer {
+    return FfiConverterTypeMLSMemberFFI.lower(value)
+}
+
+
+
+
+
+
 /**
  * Matches types in mls_rs::group::message_processor
  */
@@ -3448,64 +3568,6 @@ public func FfiConverterTypeLifetime_lift(_ buf: RustBuffer) throws -> Lifetime 
 #endif
 public func FfiConverterTypeLifetime_lower(_ value: Lifetime) -> RustBuffer {
     return FfiConverterTypeLifetime.lower(value)
-}
-
-
-public struct MlsMemberFfi {
-    public var index: UInt32
-    /**
-     * Current identity public key and credential of this member.
-     */
-    public var signingIdentity: SigningIdentityFfi
-
-    // Default memberwise initializers are never public by default, so we
-    // declare one manually.
-    public init(index: UInt32, 
-        /**
-         * Current identity public key and credential of this member.
-         */signingIdentity: SigningIdentityFfi) {
-        self.index = index
-        self.signingIdentity = signingIdentity
-    }
-}
-
-#if compiler(>=6)
-extension MlsMemberFfi: Sendable {}
-#endif
-
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeMLSMemberFFI: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> MlsMemberFfi {
-        return
-            try MlsMemberFfi(
-                index: FfiConverterUInt32.read(from: &buf), 
-                signingIdentity: FfiConverterTypeSigningIdentityFFI.read(from: &buf)
-        )
-    }
-
-    public static func write(_ value: MlsMemberFfi, into buf: inout [UInt8]) {
-        FfiConverterUInt32.write(value.index, into: &buf)
-        FfiConverterTypeSigningIdentityFFI.write(value.signingIdentity, into: &buf)
-    }
-}
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeMLSMemberFFI_lift(_ buf: RustBuffer) throws -> MlsMemberFfi {
-    return try FfiConverterTypeMLSMemberFFI.lift(buf)
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeMLSMemberFFI_lower(_ value: MlsMemberFfi) -> RustBuffer {
-    return FfiConverterTypeMLSMemberFFI.lower(value)
 }
 
 
@@ -4858,6 +4920,30 @@ fileprivate struct FfiConverterOptionTypeExtensionListFFI: FfiConverterRustBuffe
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionTypeMLSMemberFFI: FfiConverterRustBuffer {
+    typealias SwiftType = MlsMemberFfi?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeMLSMemberFFI.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeMLSMemberFFI.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeMessageFFI: FfiConverterRustBuffer {
     typealias SwiftType = MessageFfi?
 
@@ -4930,30 +5016,6 @@ fileprivate struct FfiConverterOptionTypeKeyPackageDataFFI: FfiConverterRustBuff
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterOptionTypeMLSMemberFFI: FfiConverterRustBuffer {
-    typealias SwiftType = MlsMemberFfi?
-
-    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
-        guard let value = value else {
-            writeInt(&buf, Int8(0))
-            return
-        }
-        writeInt(&buf, Int8(1))
-        FfiConverterTypeMLSMemberFFI.write(value, into: &buf)
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
-        switch try readInt(&buf) as Int8 {
-        case 0: return nil
-        case 1: return try FfiConverterTypeMLSMemberFFI.read(from: &buf)
-        default: throw UniffiInternalError.unexpectedOptionalTag
-        }
-    }
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
 fileprivate struct FfiConverterOptionTypeSignatureSecretKeyFFI: FfiConverterRustBuffer {
     typealias SwiftType = SignatureSecretKeyFfi?
 
@@ -4995,6 +5057,31 @@ fileprivate struct FfiConverterSequenceUInt16: FfiConverterRustBuffer {
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
             seq.append(try FfiConverterUInt16.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeMLSMemberFFI: FfiConverterRustBuffer {
+    typealias SwiftType = [MlsMemberFfi]
+
+    public static func write(_ value: [MlsMemberFfi], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeMLSMemberFFI.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [MlsMemberFfi] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [MlsMemberFfi]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeMLSMemberFFI.read(from: &buf))
         }
         return seq
     }
@@ -5045,31 +5132,6 @@ fileprivate struct FfiConverterSequenceTypeEpochRecordFFI: FfiConverterRustBuffe
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
             seq.append(try FfiConverterTypeEpochRecordFFI.read(from: &buf))
-        }
-        return seq
-    }
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-fileprivate struct FfiConverterSequenceTypeMLSMemberFFI: FfiConverterRustBuffer {
-    typealias SwiftType = [MlsMemberFfi]
-
-    public static func write(_ value: [MlsMemberFfi], into buf: inout [UInt8]) {
-        let len = Int32(value.count)
-        writeInt(&buf, len)
-        for item in value {
-            FfiConverterTypeMLSMemberFFI.write(item, into: &buf)
-        }
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [MlsMemberFfi] {
-        let len: Int32 = try readInt(&buf)
-        var seq = [MlsMemberFfi]()
-        seq.reserveCapacity(Int(len))
-        for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeMLSMemberFFI.read(from: &buf))
         }
         return seq
     }
@@ -5178,10 +5240,10 @@ private let initializationResult: InitializationResult = {
     if (uniffi_mls_rs_uniffi_ios_checksum_method_groupffi_group_id() != 36382) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_mls_rs_uniffi_ios_checksum_method_groupffi_member_at_index() != 22115) {
+    if (uniffi_mls_rs_uniffi_ios_checksum_method_groupffi_member_at_index() != 9925) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_mls_rs_uniffi_ios_checksum_method_groupffi_members() != 23337) {
+    if (uniffi_mls_rs_uniffi_ios_checksum_method_groupffi_members() != 4678) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_mls_rs_uniffi_ios_checksum_method_groupffi_process_incoming_message() != 59118) {

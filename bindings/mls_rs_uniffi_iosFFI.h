@@ -618,6 +618,26 @@ void*_Nonnull uniffi_mls_rs_uniffi_ios_fn_clone_leafnodeffi(void*_Nonnull ptr, R
 void uniffi_mls_rs_uniffi_ios_fn_free_leafnodeffi(void*_Nonnull ptr, RustCallStatus *_Nonnull out_status
 );
 #endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_MLS_RS_UNIFFI_IOS_FN_CLONE_MLSMEMBERFFI
+#define UNIFFI_FFIDEF_UNIFFI_MLS_RS_UNIFFI_IOS_FN_CLONE_MLSMEMBERFFI
+void*_Nonnull uniffi_mls_rs_uniffi_ios_fn_clone_mlsmemberffi(void*_Nonnull ptr, RustCallStatus *_Nonnull out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_MLS_RS_UNIFFI_IOS_FN_FREE_MLSMEMBERFFI
+#define UNIFFI_FFIDEF_UNIFFI_MLS_RS_UNIFFI_IOS_FN_FREE_MLSMEMBERFFI
+void uniffi_mls_rs_uniffi_ios_fn_free_mlsmemberffi(void*_Nonnull ptr, RustCallStatus *_Nonnull out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_MLS_RS_UNIFFI_IOS_FN_METHOD_MLSMEMBERFFI_UNIFFI_TRAIT_EQ_EQ
+#define UNIFFI_FFIDEF_UNIFFI_MLS_RS_UNIFFI_IOS_FN_METHOD_MLSMEMBERFFI_UNIFFI_TRAIT_EQ_EQ
+int8_t uniffi_mls_rs_uniffi_ios_fn_method_mlsmemberffi_uniffi_trait_eq_eq(void*_Nonnull ptr, void*_Nonnull other, RustCallStatus *_Nonnull out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_MLS_RS_UNIFFI_IOS_FN_METHOD_MLSMEMBERFFI_UNIFFI_TRAIT_EQ_NE
+#define UNIFFI_FFIDEF_UNIFFI_MLS_RS_UNIFFI_IOS_FN_METHOD_MLSMEMBERFFI_UNIFFI_TRAIT_EQ_NE
+int8_t uniffi_mls_rs_uniffi_ios_fn_method_mlsmemberffi_uniffi_trait_eq_ne(void*_Nonnull ptr, void*_Nonnull other, RustCallStatus *_Nonnull out_status
+);
+#endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_MLS_RS_UNIFFI_IOS_FN_CLONE_MESSAGEFFI
 #define UNIFFI_FFIDEF_UNIFFI_MLS_RS_UNIFFI_IOS_FN_CLONE_MESSAGEFFI
 void*_Nonnull uniffi_mls_rs_uniffi_ios_fn_clone_messageffi(void*_Nonnull ptr, RustCallStatus *_Nonnull out_status

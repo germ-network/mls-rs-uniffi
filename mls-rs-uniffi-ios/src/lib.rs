@@ -60,6 +60,8 @@ fn arc_unwrap_or_clone<T: Clone>(arc: Arc<T>) -> T {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Mutex;
+    use crate::message::ReceivedMessageFFI;
     use super::*;
     use crate::client::{generate_signature_keypair, ClientFFI};
     use crate::config::group_context::CipherSuiteFFI;
