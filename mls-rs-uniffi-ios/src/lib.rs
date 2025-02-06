@@ -25,6 +25,8 @@ pub mod mls_rs_error;
 
 use crate::config::group_context::ExtensionListFFI;
 use crate::mls_rs_error::MlSrsError;
+use crate::message::ReceivedMessageFFI;
+
 use mls_rs::error::MlsError;
 use std::sync::Arc;
 
@@ -92,10 +94,10 @@ mod tests {
 
         alice_group.write_to_storage()?;
 
-        //     let ReceivedMessage::ApplicationMessage { sender: _, data, authenticated_data: _ } = received_message else {
-        //         panic!("Wrong message type: {received_message:?}");
-        //     };
-        //     assert_eq!(data, b"hello, bob");
+        let ReceivedMessageFFI::ApplicationMessage { sender: _, data, authenticated_data: _ } = received_message else {
+            panic!("Wrong message type: {received_message:?}");
+        };
+        assert_eq!(data, b"hello, bob");
 
         Ok(())
     }
@@ -105,14 +107,14 @@ mod tests {
         let (alice_group, bob_group) = setup_test()?;
 
         let message = alice_group.encrypt_application_message(b"hello, bob", vec![])?;
-        let received_message = bob_group.process_incoming_message(Arc::new(message));
+        let received_message = bob_group.process_incoming_message(Arc::new(message))?;
 
         alice_group.write_to_storage()?;
 
-        //     let ReceivedMessage::ApplicationMessage { sender: _, data, authenticated_data: _ } = received_message else {
-        //         panic!("Wrong message type: {received_message:?}");
-        //     };
-        //     assert_eq!(data, b"hello, bob");
+        let ReceivedMessageFFI::ApplicationMessage { sender: _, data, authenticated_data: _ } = received_message else {
+            panic!("Wrong message type: {received_message:?}");
+        };
+        assert_eq!(data, b"hello, bob");
 
         //     //adding on additional germ steps here
         //     let update = bob_group.propose_update( None, None,vec![] )?;
