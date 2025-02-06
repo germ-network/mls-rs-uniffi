@@ -24,13 +24,10 @@ pub mod message;
 pub mod mls_rs_error;
 
 use crate::config::group_context::ExtensionListFFI;
-use crate::message::ReceivedMessageFFI;
 use crate::mls_rs_error::MlSrsError;
 
 use mls_rs::error::MlsError;
 use std::sync::Arc;
-
-use std::sync::Mutex;
 
 uniffi::setup_scaffolding!();
 
