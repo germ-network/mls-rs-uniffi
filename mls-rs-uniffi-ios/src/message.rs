@@ -305,18 +305,3 @@ impl From<mls_rs::group::CommitEffect> for CommitEffectFFI {
         }
     }
 }
-
-// /// A member of a MLS group.
-// pub struct MemberFFI {
-//     /// The index of this member within a group.
-//     ///
-//     /// This value is consistent for all clients and will not change as the
-//     /// group evolves.
-//     pub index: u32,
-//     /// Current identity public key and credential of this member.
-//     pub signing_identity: SigningIdentityFFI,
-//     /// Current client [Capabilities] of this member.
-//     // pub capabilities: Capabilities,
-//     /// Current leaf node extensions in use by this member.
-//     pub extensions: ExtensionListFFI,
-// }
