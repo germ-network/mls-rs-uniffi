@@ -226,28 +226,26 @@ impl GroupFFI {
     //     Ok(messages)
     // }
 
-    // /// Encrypt an application message using the current group state.
-    // ///
-    // /// An application message is an application-specific payload,
-    // /// e.g., an UTF-8 encoded text message in a chat app. The
-    // /// encoding is not determined by MLS and applications will have
-    // /// to implement their own mechanism for how to agree on the
-    // /// content encoding.
-    // ///
-    // /// The other group members will find the message in
-    // /// [`ReceivedMessage::ApplicationMessage`] after calling
-    // /// [`Group::process_incoming_message`].
-    // pub async fn encrypt_application_message(
-    //     &self,
-    //      message: &[u8],
-    //      authenticated_data: Vec<u8>
-    //     ) -> Result<Message, MlSrsError> {
-    //     let mut group = self.inner().await;
-    //     let mls_message = group
-    //         .encrypt_application_message(message, authenticated_data)
-    //         .await?;
-    //     Ok(mls_message.into())
-    // }
+    /// Encrypt an application message using the current group state.
+    ///
+    /// An application message is an application-specific payload,
+    /// e.g., an UTF-8 encoded text message in a chat app. The
+    /// encoding is not determined by MLS and applications will have
+    /// to implement their own mechanism for how to agree on the
+    /// content encoding.
+    ///
+    /// The other group members will find the message in
+    /// [`ReceivedMessage::ApplicationMessage`] after calling
+    /// [`Group::process_incoming_message`].
+    pub async fn encrypt_application_message(
+        &self,
+        message: &[u8],
+        authenticated_data: Vec<u8>,
+    ) -> Result<MessageFFI, MlSrsError> {
+        let mut group = self.inner();
+        let mls_message = group.encrypt_application_message(message, authenticated_data)?;
+        Ok(mls_message.into())
+    }
 
     /// Process an inbound message for this group.
     pub fn process_incoming_message(
