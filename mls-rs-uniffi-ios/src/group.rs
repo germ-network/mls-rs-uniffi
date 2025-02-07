@@ -447,6 +447,16 @@ pub struct MLSMemberFFI {
     pub signing_identity: Arc<SigningIdentityFFI>,
 }
 
+impl MLSMemberFFI {
+    pub fn get_indec(&self) -> u32 {
+        self.index
+    }
+
+    pub fn get_signing_identity(&self) -> Arc<SigningIdentityFFI> {
+        self.signing_identity.clone()
+    }
+}
+
 impl From<mls_rs::group::Member> for MLSMemberFFI {
     fn from(inner: mls_rs::group::Member) -> Self {
         Self {
