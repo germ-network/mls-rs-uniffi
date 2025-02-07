@@ -43,6 +43,14 @@ impl MessageFFI {
         self.inner.epoch()
     }
 
+    pub fn private_message_content_type(&self) -> Option<u8> {
+        let ciphertext_maybe = self.inner.private_message();
+        let Some(ciphertext) = ciphertext_maybe else {
+            return None;
+        };
+        Some(ciphertext.content_type as u8)
+    }
+
     pub fn unchecked_auth_data(
         &self,
         expected_outer_type: u8,
