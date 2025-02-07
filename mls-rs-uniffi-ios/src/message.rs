@@ -1,6 +1,10 @@
 use crate::config::group_context::CipherSuiteFFI;
 use crate::ExtensionListFFI;
 use mls_rs::group::CommitEffect;
+use mls_rs::group::ProposalMessageDescription;
+use mls_rs::group::ProposalSender;
+use mls_rs::group::Sender;
+use mls_rs::mls_rules::ProposalInfo;
 use mls_rs::MlsMessage;
 use std::sync::Arc;
 
@@ -146,7 +150,10 @@ pub enum CommitEffectFFI {
 pub enum ProposalFFI {
     // Add(alloc::boxed::Box<AddProposal>),
     Add(Arc<KeyPackageFFI>),
-    Update(Arc<SigningIdentityFFI>),
+    Update {
+        new: Arc<SigningIdentityFFI>,
+        senderIndex: u32,
+    },
     // Replace(Arc<ReplaceProposalFFI>),
     Remove(u32), // Psk(PreSharedKeyProposal),
                  // ReInit(ReInitProposal),
@@ -183,25 +190,58 @@ impl ProposalFFI {
     pub fn signing_identity(&self) -> Option<Arc<SigningIdentityFFI>> {
         match self {
             ProposalFFI::Add(k) => Some(Arc::new(k.leaf_node_signing_identity.clone())),
-            ProposalFFI::Update(s) => Some(s.clone()),
+            ProposalFFI::Update {
+                new: new,
+                senderIndex: _,
+            } => Some(new.clone()),
             // ProposalFFI::Replace(r) => Some(Arc::new(r.leaf_node.signing_identity.clone())),
             ProposalFFI::Remove(_) => None,
         }
     }
 }
 
-impl TryFrom<Proposal> for ProposalFFI {
+impl TryFrom<ProposalInfo<Proposal>> for ProposalFFI {
     type Error = MlSrsError;
 
-    fn try_from(value: Proposal) -> Result<Self, Self::Error> {
-        match value {
+    fn try_from(value: ProposalInfo<Proposal>) -> Result<Self, Self::Error> {
+        match value.proposal {
             Proposal::Add(k) => {
                 let key_package = k.key_package().clone();
                 Ok(ProposalFFI::Add(Arc::new(key_package.try_into()?)))
             }
             Proposal::Update(u) => {
                 let signing_identity = u.signing_identity().clone();
-                Ok(ProposalFFI::Update(Arc::new(signing_identity.into())))
+                match value.sender {
+                    Sender::Member(index) => Ok(ProposalFFI::Update {
+                        new: Arc::new(signing_identity.into()),
+                        senderIndex: index,
+                    }),
+                    _ => Err(MlSrsError::UnexpectedProposalSender),
+                }
+            }
+            _ => Ok(ProposalFFI::Remove(0)),
+        }
+    }
+}
+
+impl TryFrom<ProposalMessageDescription> for ProposalFFI {
+    type Error = MlSrsError;
+
+    fn try_from(value: ProposalMessageDescription) -> Result<Self, Self::Error> {
+        match value.proposal {
+            Proposal::Add(k) => {
+                let key_package = k.key_package().clone();
+                Ok(ProposalFFI::Add(Arc::new(key_package.try_into()?)))
+            }
+            Proposal::Update(u) => {
+                let signing_identity = u.signing_identity().clone();
+                match value.sender {
+                    ProposalSender::Member(index) => Ok(ProposalFFI::Update {
+                        new: Arc::new(signing_identity.into()),
+                        senderIndex: index,
+                    }),
+                    _ => Err(MlSrsError::UnexpectedProposalSender),
+                }
             }
             _ => Ok(ProposalFFI::Remove(0)),
         }
@@ -288,13 +328,13 @@ impl From<mls_rs::group::CommitEffect> for CommitEffectFFI {
                     .applied_proposals
                     .into_iter()
                     //warning - silently fails - TODO: try_collect
-                    .flat_map(|p| p.proposal.try_into())
+                    .flat_map(|p| p.try_into())
                     .collect(),
                 unused_proposals: new_epoch
                     .unused_proposals
                     .into_iter()
                     //warning - silently fails - TODO: try_collect
-                    .flat_map(|p| p.proposal.try_into())
+                    .flat_map(|p| p.try_into())
                     .collect(),
             },
             CommitEffect::Removed {

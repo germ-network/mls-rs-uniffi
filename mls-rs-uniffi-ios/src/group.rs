@@ -4,6 +4,7 @@ use crate::config::SigningIdentityFFI;
 use crate::message::ProposalFFI;
 use crate::message::ReceivedMessageFFI;
 use crate::MlSrsError;
+use mls_rs::group::ProposalSender;
 use std::sync::Arc;
 use std::sync::Mutex;
 
@@ -78,7 +79,7 @@ impl TryFrom<mls_rs::group::CommitOutput> for CommitOutputFFI {
             .unused_proposals
             .into_iter()
             //warning - silently fails - TODO: try_collect
-            .flat_map(|proposal_info| proposal_info.proposal.try_into())
+            .flat_map(|proposal_info| proposal_info.try_into())
             .collect();
 
         Ok(Self {
@@ -288,7 +289,7 @@ impl GroupFFI {
                     }
                     _ => todo!("External and NewMember proposal senders are not supported"),
                 };
-                let proposal = proposal_message.proposal.try_into()?;
+                let proposal = proposal_message.try_into()?;
                 Ok(ReceivedMessageFFI::ReceivedProposal { sender, proposal })
             }
             // TODO: group::ReceivedMessage::GroupInfo does not have any

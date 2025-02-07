@@ -32,6 +32,8 @@ pub enum MlSrsError {
     MissingBasicCredential,
     #[error("Unexpected Message Format")]
     UnexpectedMessageTypeDetailed(u8, u8),
+    #[error("Unexpected Proposal")]
+    UnexpectedProposalSender,
     #[error("Not Implemented")]
     NotImplemented,
 }
