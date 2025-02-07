@@ -2669,6 +2669,8 @@ public protocol MessageFfiProtocol: AnyObject {
     
     func groupId()  -> Data?
     
+    func privateMessageContentType()  -> UInt8?
+    
     func toBytes() throws  -> Data
     
     func uncheckedAuthData(expectedOuterType: UInt8, expectedInnerType: UInt8?) throws  -> MessageFfi?
@@ -2746,6 +2748,13 @@ open func epoch() -> UInt64?  {
 open func groupId() -> Data?  {
     return try!  FfiConverterOptionData.lift(try! rustCall() {
     uniffi_mls_rs_uniffi_ios_fn_method_messageffi_group_id(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func privateMessageContentType() -> UInt8?  {
+    return try!  FfiConverterOptionUInt8.lift(try! rustCall() {
+    uniffi_mls_rs_uniffi_ios_fn_method_messageffi_private_message_content_type(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -4431,6 +4440,8 @@ public enum MlSrsError {
     
     case UnexpectedMessageTypeDetailed(message: String)
     
+    case UnexpectedProposalSender(message: String)
+    
     case NotImplemented(message: String)
     
 }
@@ -4481,7 +4492,11 @@ public struct FfiConverterTypeMlSrsError: FfiConverterRustBuffer {
             message: try FfiConverterString.read(from: &buf)
         )
         
-        case 9: return .NotImplemented(
+        case 9: return .UnexpectedProposalSender(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 10: return .NotImplemented(
             message: try FfiConverterString.read(from: &buf)
         )
         
@@ -4512,8 +4527,10 @@ public struct FfiConverterTypeMlSrsError: FfiConverterRustBuffer {
             writeInt(&buf, Int32(7))
         case .UnexpectedMessageTypeDetailed(_ /* message is ignored*/):
             writeInt(&buf, Int32(8))
-        case .NotImplemented(_ /* message is ignored*/):
+        case .UnexpectedProposalSender(_ /* message is ignored*/):
             writeInt(&buf, Int32(9))
+        case .NotImplemented(_ /* message is ignored*/):
+            writeInt(&buf, Int32(10))
 
         
         }
@@ -4554,7 +4571,7 @@ public enum ProposalFfi {
     
     case add(KeyPackageFfi
     )
-    case update(SigningIdentityFfi
+    case update(new: SigningIdentityFfi, senderIndex: UInt32
     )
     case remove(UInt32
     )
@@ -4578,7 +4595,7 @@ public struct FfiConverterTypeProposalFFI: FfiConverterRustBuffer {
         case 1: return .add(try FfiConverterTypeKeyPackageFFI.read(from: &buf)
         )
         
-        case 2: return .update(try FfiConverterTypeSigningIdentityFFI.read(from: &buf)
+        case 2: return .update(new: try FfiConverterTypeSigningIdentityFFI.read(from: &buf), senderIndex: try FfiConverterUInt32.read(from: &buf)
         )
         
         case 3: return .remove(try FfiConverterUInt32.read(from: &buf)
@@ -4597,9 +4614,10 @@ public struct FfiConverterTypeProposalFFI: FfiConverterRustBuffer {
             FfiConverterTypeKeyPackageFFI.write(v1, into: &buf)
             
         
-        case let .update(v1):
+        case let .update(new,senderIndex):
             writeInt(&buf, Int32(2))
-            FfiConverterTypeSigningIdentityFFI.write(v1, into: &buf)
+            FfiConverterTypeSigningIdentityFFI.write(new, into: &buf)
+            FfiConverterUInt32.write(senderIndex, into: &buf)
             
         
         case let .remove(v1):
@@ -5295,6 +5313,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_mls_rs_uniffi_ios_checksum_method_messageffi_group_id() != 55497) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_mls_rs_uniffi_ios_checksum_method_messageffi_private_message_content_type() != 62397) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_mls_rs_uniffi_ios_checksum_method_messageffi_to_bytes() != 47388) {
