@@ -1,9 +1,6 @@
 use crate::config::group_context::CipherSuiteFFI;
 use crate::ExtensionListFFI;
-use mls_rs::group::CommitEffect;
-use mls_rs::group::ProposalMessageDescription;
-use mls_rs::group::ProposalSender;
-use mls_rs::group::Sender;
+use mls_rs::group::{CommitEffect, ProposalMessageDescription, ProposalSender, Sender};
 use mls_rs::mls_rules::ProposalInfo;
 use mls_rs::MlsMessage;
 use std::sync::Arc;
@@ -12,7 +9,6 @@ use crate::config::SigningIdentityFFI;
 use crate::MlSrsError;
 use mls_rs::error::{IntoAnyError, MlsError};
 use mls_rs::group::proposal::Proposal;
-// use mls_rs::group::message_processor;
 
 ///Matches types in mls_rs::group::message_processor
 
@@ -152,7 +148,7 @@ pub enum ProposalFFI {
     Add(Arc<KeyPackageFFI>),
     Update {
         new: Arc<SigningIdentityFFI>,
-        senderIndex: u32,
+        sender_index: u32,
     },
     // Replace(Arc<ReplaceProposalFFI>),
     Remove(u32), // Psk(PreSharedKeyProposal),
@@ -191,8 +187,8 @@ impl ProposalFFI {
         match self {
             ProposalFFI::Add(k) => Some(Arc::new(k.leaf_node_signing_identity.clone())),
             ProposalFFI::Update {
-                new: new,
-                senderIndex: _,
+                new,
+                sender_index: _,
             } => Some(new.clone()),
             // ProposalFFI::Replace(r) => Some(Arc::new(r.leaf_node.signing_identity.clone())),
             ProposalFFI::Remove(_) => None,
@@ -214,7 +210,7 @@ impl TryFrom<ProposalInfo<Proposal>> for ProposalFFI {
                 match value.sender {
                     Sender::Member(index) => Ok(ProposalFFI::Update {
                         new: Arc::new(signing_identity.into()),
-                        senderIndex: index,
+                        sender_index: index,
                     }),
                     _ => Err(MlSrsError::UnexpectedProposalSender),
                 }
@@ -238,7 +234,7 @@ impl TryFrom<ProposalMessageDescription> for ProposalFFI {
                 match value.sender {
                     ProposalSender::Member(index) => Ok(ProposalFFI::Update {
                         new: Arc::new(signing_identity.into()),
-                        senderIndex: index,
+                        sender_index: index,
                     }),
                     _ => Err(MlSrsError::UnexpectedProposalSender),
                 }

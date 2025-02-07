@@ -1,12 +1,8 @@
 use crate::arc_unwrap_or_clone;
-use crate::config::SignatureSecretKeyFFI;
-use crate::config::SigningIdentityFFI;
-use crate::message::ProposalFFI;
-use crate::message::ReceivedMessageFFI;
+use crate::config::{SignatureSecretKeyFFI, SigningIdentityFFI};
+use crate::message::{ProposalFFI, ReceivedMessageFFI};
 use crate::MlSrsError;
-use mls_rs::group::ProposalSender;
-use std::sync::Arc;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use crate::config::UniFFIConfig;
 use crate::message::MessageFFI;
