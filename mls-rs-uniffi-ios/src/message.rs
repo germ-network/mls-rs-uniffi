@@ -257,29 +257,29 @@ pub struct LeafIndexFFI {
 }
 
 //may not get used as leaf nodes are generally crate private
-#[derive(Clone, Debug, uniffi::Object)]
-pub struct LeafNodeFFI {
-    // pub public_key: HpkePublicKey,
-    pub public_key: Vec<u8>,
-    pub signing_identity: SigningIdentityFFI,
-    // pub capabilities: Capabilities,
-    pub leaf_node_source: LeafNodeSource,
-    // pub extensions: ExtensionList,
-    pub signature: Vec<u8>,
-}
+// #[derive(Clone, Debug, uniffi::Object)]
+// pub struct LeafNodeFFI {
+//     // pub public_key: HpkePublicKey,
+//     pub public_key: Vec<u8>,
+//     pub signing_identity: SigningIdentityFFI,
+//     // pub capabilities: Capabilities,
+//     pub leaf_node_source: LeafNodeSource,
+//     // pub extensions: ExtensionList,
+//     pub signature: Vec<u8>,
+// }
 
-#[derive(Clone, Debug, uniffi::Enum)]
-pub enum LeafNodeSource {
-    KeyPackage(Lifetime),
-    Update,
-    Commit(Vec<u8>),
-}
+// #[derive(Clone, Debug, uniffi::Enum)]
+// pub enum LeafNodeSource {
+//     KeyPackage(Lifetime),
+//     Update,
+//     Commit(Vec<u8>),
+// }
 
-#[derive(Clone, Debug, uniffi::Record)]
-pub struct Lifetime {
-    pub not_before: u64,
-    pub not_after: u64,
-}
+// #[derive(Clone, Debug, uniffi::Record)]
+// pub struct Lifetime {
+//     pub not_before: u64,
+//     pub not_after: u64,
+// }
 
 #[derive(Clone, Debug, uniffi::Object)]
 pub struct KeyPackageFFI {
@@ -290,6 +290,25 @@ pub struct KeyPackageFFI {
     // pub leaf_node: LeafNodeFFI,
     pub extensions: ExtensionListFFI,
     pub signature: Vec<u8>,
+}
+
+#[uniffi::export]
+impl KeyPackageFFI {
+    pub fn get_version(&self) -> ProtocolVersionFFI {
+        self.version.clone()
+    }
+
+    pub fn get_cipher_suite(&self) -> CipherSuiteFFI {
+        self.cipher_suite.clone()
+    }
+
+    pub fn get_hpke_init_key(&self) -> Vec<u8> {
+        self.hpke_init_key.clone()
+    }
+
+    pub fn get_leaf_node_signing_identity(&self) -> SigningIdentityFFI {
+        self.leaf_node_signing_identity.clone()
+    }
 }
 
 impl TryFrom<mls_rs::KeyPackage> for KeyPackageFFI {

@@ -2047,6 +2047,14 @@ public func FfiConverterTypeIdentityProviderProtocol_lower(_ value: IdentityProv
 
 public protocol KeyPackageFfiProtocol: AnyObject {
     
+    func getCipherSuite()  -> CipherSuiteFfi
+    
+    func getHpkeInitKey()  -> Data
+    
+    func getLeafNodeSigningIdentity()  -> SigningIdentityFfi
+    
+    func getVersion()  -> ProtocolVersionFfi
+    
 }
 open class KeyPackageFfi: KeyPackageFfiProtocol, @unchecked Sendable {
     fileprivate let pointer: UnsafeMutableRawPointer!
@@ -2096,6 +2104,34 @@ open class KeyPackageFfi: KeyPackageFfiProtocol, @unchecked Sendable {
 
     
 
+    
+open func getCipherSuite() -> CipherSuiteFfi  {
+    return try!  FfiConverterTypeCipherSuiteFFI_lift(try! rustCall() {
+    uniffi_mls_rs_uniffi_ios_fn_method_keypackageffi_get_cipher_suite(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func getHpkeInitKey() -> Data  {
+    return try!  FfiConverterData.lift(try! rustCall() {
+    uniffi_mls_rs_uniffi_ios_fn_method_keypackageffi_get_hpke_init_key(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func getLeafNodeSigningIdentity() -> SigningIdentityFfi  {
+    return try!  FfiConverterTypeSigningIdentityFFI_lift(try! rustCall() {
+    uniffi_mls_rs_uniffi_ios_fn_method_keypackageffi_get_leaf_node_signing_identity(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func getVersion() -> ProtocolVersionFfi  {
+    return try!  FfiConverterTypeProtocolVersionFFI_lift(try! rustCall() {
+    uniffi_mls_rs_uniffi_ios_fn_method_keypackageffi_get_version(self.uniffiClonePointer(),$0
+    )
+})
+}
     
 
 }
@@ -2435,116 +2471,6 @@ public func FfiConverterTypeKeyPackageStorageProtocol_lift(_ pointer: UnsafeMuta
 #endif
 public func FfiConverterTypeKeyPackageStorageProtocol_lower(_ value: KeyPackageStorageProtocol) -> UnsafeMutableRawPointer {
     return FfiConverterTypeKeyPackageStorageProtocol.lower(value)
-}
-
-
-
-
-
-
-public protocol LeafNodeFfiProtocol: AnyObject {
-    
-}
-open class LeafNodeFfi: LeafNodeFfiProtocol, @unchecked Sendable {
-    fileprivate let pointer: UnsafeMutableRawPointer!
-
-    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-    public struct NoPointer {
-        public init() {}
-    }
-
-    // TODO: We'd like this to be `private` but for Swifty reasons,
-    // we can't implement `FfiConverter` without making this `required` and we can't
-    // make it `required` without making it `public`.
-    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
-        self.pointer = pointer
-    }
-
-    // This constructor can be used to instantiate a fake object.
-    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
-    //
-    // - Warning:
-    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-    public init(noPointer: NoPointer) {
-        self.pointer = nil
-    }
-
-#if swift(>=5.8)
-    @_documentation(visibility: private)
-#endif
-    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
-        return try! rustCall { uniffi_mls_rs_uniffi_ios_fn_clone_leafnodeffi(self.pointer, $0) }
-    }
-    // No primary constructor declared for this class.
-
-    deinit {
-        guard let pointer = pointer else {
-            return
-        }
-
-        try! rustCall { uniffi_mls_rs_uniffi_ios_fn_free_leafnodeffi(pointer, $0) }
-    }
-
-    
-
-    
-
-}
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeLeafNodeFFI: FfiConverter {
-
-    typealias FfiType = UnsafeMutableRawPointer
-    typealias SwiftType = LeafNodeFfi
-
-    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> LeafNodeFfi {
-        return LeafNodeFfi(unsafeFromRawPointer: pointer)
-    }
-
-    public static func lower(_ value: LeafNodeFfi) -> UnsafeMutableRawPointer {
-        return value.uniffiClonePointer()
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LeafNodeFfi {
-        let v: UInt64 = try readInt(&buf)
-        // The Rust code won't compile if a pointer won't fit in a UInt64.
-        // We have to go via `UInt` because that's the thing that's the size of a pointer.
-        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
-        if (ptr == nil) {
-            throw UniffiInternalError.unexpectedNullPointer
-        }
-        return try lift(ptr!)
-    }
-
-    public static func write(_ value: LeafNodeFfi, into buf: inout [UInt8]) {
-        // This fiddling is because `Int` is the thing that's the same size as a pointer.
-        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
-        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
-    }
-}
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeLeafNodeFFI_lift(_ pointer: UnsafeMutableRawPointer) throws -> LeafNodeFfi {
-    return try FfiConverterTypeLeafNodeFFI.lift(pointer)
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeLeafNodeFFI_lower(_ value: LeafNodeFfi) -> UnsafeMutableRawPointer {
-    return FfiConverterTypeLeafNodeFFI.lower(value)
 }
 
 
@@ -3540,76 +3466,6 @@ public func FfiConverterTypeLeafIndexFFI_lower(_ value: LeafIndexFfi) -> RustBuf
 }
 
 
-public struct Lifetime {
-    public var notBefore: UInt64
-    public var notAfter: UInt64
-
-    // Default memberwise initializers are never public by default, so we
-    // declare one manually.
-    public init(notBefore: UInt64, notAfter: UInt64) {
-        self.notBefore = notBefore
-        self.notAfter = notAfter
-    }
-}
-
-#if compiler(>=6)
-extension Lifetime: Sendable {}
-#endif
-
-
-extension Lifetime: Equatable, Hashable {
-    public static func ==(lhs: Lifetime, rhs: Lifetime) -> Bool {
-        if lhs.notBefore != rhs.notBefore {
-            return false
-        }
-        if lhs.notAfter != rhs.notAfter {
-            return false
-        }
-        return true
-    }
-
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(notBefore)
-        hasher.combine(notAfter)
-    }
-}
-
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeLifetime: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Lifetime {
-        return
-            try Lifetime(
-                notBefore: FfiConverterUInt64.read(from: &buf), 
-                notAfter: FfiConverterUInt64.read(from: &buf)
-        )
-    }
-
-    public static func write(_ value: Lifetime, into buf: inout [UInt8]) {
-        FfiConverterUInt64.write(value.notBefore, into: &buf)
-        FfiConverterUInt64.write(value.notAfter, into: &buf)
-    }
-}
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeLifetime_lift(_ buf: RustBuffer) throws -> Lifetime {
-    return try FfiConverterTypeLifetime.lift(buf)
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeLifetime_lower(_ value: Lifetime) -> RustBuffer {
-    return FfiConverterTypeLifetime.lower(value)
-}
-
-
 public struct ProtocolVersionFfi {
     public var version: UInt16
 
@@ -4232,86 +4088,6 @@ public func FfiConverterTypeCommitEffectFFI_lower(_ value: CommitEffectFfi) -> R
     return FfiConverterTypeCommitEffectFFI.lower(value)
 }
 
-
-
-
-// Note that we don't yet support `indirect` for enums.
-// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
-
-public enum LeafNodeSource {
-    
-    case keyPackage(Lifetime
-    )
-    case update
-    case commit(Data
-    )
-}
-
-
-#if compiler(>=6)
-extension LeafNodeSource: Sendable {}
-#endif
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeLeafNodeSource: FfiConverterRustBuffer {
-    typealias SwiftType = LeafNodeSource
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LeafNodeSource {
-        let variant: Int32 = try readInt(&buf)
-        switch variant {
-        
-        case 1: return .keyPackage(try FfiConverterTypeLifetime.read(from: &buf)
-        )
-        
-        case 2: return .update
-        
-        case 3: return .commit(try FfiConverterData.read(from: &buf)
-        )
-        
-        default: throw UniffiInternalError.unexpectedEnumCase
-        }
-    }
-
-    public static func write(_ value: LeafNodeSource, into buf: inout [UInt8]) {
-        switch value {
-        
-        
-        case let .keyPackage(v1):
-            writeInt(&buf, Int32(1))
-            FfiConverterTypeLifetime.write(v1, into: &buf)
-            
-        
-        case .update:
-            writeInt(&buf, Int32(2))
-        
-        
-        case let .commit(v1):
-            writeInt(&buf, Int32(3))
-            FfiConverterData.write(v1, into: &buf)
-            
-        }
-    }
-}
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeLeafNodeSource_lift(_ buf: RustBuffer) throws -> LeafNodeSource {
-    return try FfiConverterTypeLeafNodeSource.lift(buf)
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeLeafNodeSource_lower(_ value: LeafNodeSource) -> RustBuffer {
-    return FfiConverterTypeLeafNodeSource.lower(value)
-}
-
-
-extension LeafNodeSource: Equatable, Hashable {}
 
 
 
@@ -5276,6 +5052,18 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_mls_rs_uniffi_ios_checksum_method_identityproviderprotocol_supported_types() != 13654) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_mls_rs_uniffi_ios_checksum_method_keypackageffi_get_cipher_suite() != 13098) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_mls_rs_uniffi_ios_checksum_method_keypackageffi_get_hpke_init_key() != 37374) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_mls_rs_uniffi_ios_checksum_method_keypackageffi_get_leaf_node_signing_identity() != 18801) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_mls_rs_uniffi_ios_checksum_method_keypackageffi_get_version() != 54765) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_mls_rs_uniffi_ios_checksum_method_keypackagestorageprotocol_delete() != 35854) {
