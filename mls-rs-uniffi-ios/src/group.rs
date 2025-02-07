@@ -421,22 +421,22 @@ impl GroupFFI {
     //     }
     // }
 
-    // pub async fn export_secret(
-    //     &self,
-    //     label: Vec<u8>,
-    //     context: Vec<u8>,
-    //     len: u64
-    // ) -> Result<Vec<u8>, MlSrsError> {
-    //     let result =self.inner().await
-    //         .export_secret(
-    //             &label,
-    //             &context,
-    //             len as usize
-    //         )?
-    //         .as_bytes()
-    //         .to_vec();
-    //     Ok(result)
-    // }
+    pub fn export_secret(
+        &self,
+        label: Vec<u8>,
+        context: Vec<u8>,
+        len: u64
+    ) -> Result<Vec<u8>, MlSrsError> {
+        let result = self.inner()
+            .export_secret(
+                &label,
+                &context,
+                len as usize
+            )?
+            .as_bytes()
+            .to_vec();
+        Ok(result)
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, uniffi::Object)]
@@ -447,6 +447,7 @@ pub struct MLSMemberFFI {
     pub signing_identity: Arc<SigningIdentityFFI>,
 }
 
+#[uniffi::export]
 impl MLSMemberFFI {
     pub fn get_indec(&self) -> u32 {
         self.index

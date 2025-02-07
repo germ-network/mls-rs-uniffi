@@ -5,8 +5,8 @@ struct ScriptTask {
     let path: URL
     let arguments: [String]
     let env: [String: String]
-    
-    init(path: URL, arguments: [String], env: [String : String] = [:]) {
+
+    init(path: URL, arguments: [String], env: [String: String] = [:]) {
         self.path = path
         self.arguments = arguments
         self.env = env
@@ -141,8 +141,9 @@ try ScriptTask(
         //the ios framework
         "-library", "./buildIos/libmls_rs_uniffi_ios_sim_combined.a", "-headers", "./bindings",
         //the simulator framework combining arm and x86_64 targets
-        "-library", "./target/aarch64-apple-ios/release/libmls_rs_uniffi_ios.a", "-headers", "./bindings",
-        "-output", "buildIos/MLSrs.xcframework"
+        "-library", "./target/aarch64-apple-ios/release/libmls_rs_uniffi_ios.a", "-headers",
+        "./bindings",
+        "-output", "buildIos/MLSrs.xcframework",
     ]
 )
 .run()
@@ -155,7 +156,7 @@ guard FileManager.default.changeCurrentDirectoryPath("./buildIos") else {
 try ScriptTask(
     path: URL(fileURLWithPath: "/usr/bin/zip"),
     arguments: [
-        "-r", "MLSrs.xcframework.zip", "MLSrs.xcframework"
+        "-r", "MLSrs.xcframework.zip", "MLSrs.xcframework",
     ]
 )
 .run()
@@ -163,7 +164,7 @@ try ScriptTask(
 try ScriptTask(
     path: URL(fileURLWithPath: "/usr/bin/swift"),
     arguments: [
-        "package", "compute-checksum", "MLSrs.xcframework.zip"
+        "package", "compute-checksum", "MLSrs.xcframework.zip",
     ]
 )
 .run()

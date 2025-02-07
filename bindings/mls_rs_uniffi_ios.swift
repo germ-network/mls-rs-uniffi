@@ -1083,6 +1083,8 @@ public protocol GroupFfiProtocol: AnyObject {
      */
     func encryptApplicationMessage(message: Data, authenticatedData: Data, allowSelfProposals: Bool) throws  -> MessageFfi
     
+    func exportSecret(label: Data, context: Data, len: UInt64) throws  -> Data
+    
     func groupId()  -> Data
     
     func memberAtIndex(index: UInt32)  -> MlsMemberFfi?
@@ -1225,6 +1227,16 @@ open func encryptApplicationMessage(message: Data, authenticatedData: Data, allo
         FfiConverterData.lower(message),
         FfiConverterData.lower(authenticatedData),
         FfiConverterBool.lower(allowSelfProposals),$0
+    )
+})
+}
+    
+open func exportSecret(label: Data, context: Data, len: UInt64)throws  -> Data  {
+    return try  FfiConverterData.lift(try rustCallWithError(FfiConverterTypeMlSrsError_lift) {
+    uniffi_mls_rs_uniffi_ios_fn_method_groupffi_export_secret(self.uniffiClonePointer(),
+        FfiConverterData.lower(label),
+        FfiConverterData.lower(context),
+        FfiConverterUInt64.lower(len),$0
     )
 })
 }
@@ -2542,6 +2554,10 @@ public func FfiConverterTypeLeafNodeFFI_lower(_ value: LeafNodeFfi) -> UnsafeMut
 
 public protocol MlsMemberFfiProtocol: AnyObject {
     
+    func getIndec()  -> UInt32
+    
+    func getSigningIdentity()  -> SigningIdentityFfi
+    
 }
 open class MlsMemberFfi: MlsMemberFfiProtocol, @unchecked Sendable {
     fileprivate let pointer: UnsafeMutableRawPointer!
@@ -2591,6 +2607,20 @@ open class MlsMemberFfi: MlsMemberFfiProtocol, @unchecked Sendable {
 
     
 
+    
+open func getIndec() -> UInt32  {
+    return try!  FfiConverterUInt32.lift(try! rustCall() {
+    uniffi_mls_rs_uniffi_ios_fn_method_mlsmemberffi_get_indec(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func getSigningIdentity() -> SigningIdentityFfi  {
+    return try!  FfiConverterTypeSigningIdentityFFI_lift(try! rustCall() {
+    uniffi_mls_rs_uniffi_ios_fn_method_mlsmemberffi_get_signing_identity(self.uniffiClonePointer(),$0
+    )
+})
+}
     
     public static func == (self: MlsMemberFfi, other: MlsMemberFfi) -> Bool {
         return try!  FfiConverterBool.lift(
@@ -5255,6 +5285,9 @@ private let initializationResult: InitializationResult = {
     if (uniffi_mls_rs_uniffi_ios_checksum_method_groupffi_encrypt_application_message() != 27766) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_mls_rs_uniffi_ios_checksum_method_groupffi_export_secret() != 34480) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_mls_rs_uniffi_ios_checksum_method_groupffi_group_id() != 36382) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -5307,6 +5340,12 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_mls_rs_uniffi_ios_checksum_method_keypackagestorageprotocol_get() != 60492) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_mls_rs_uniffi_ios_checksum_method_mlsmemberffi_get_indec() != 1848) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_mls_rs_uniffi_ios_checksum_method_mlsmemberffi_get_signing_identity() != 24712) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_mls_rs_uniffi_ios_checksum_method_messageffi_epoch() != 46127) {
