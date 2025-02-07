@@ -425,14 +425,11 @@ impl GroupFFI {
         &self,
         label: Vec<u8>,
         context: Vec<u8>,
-        len: u64
+        len: u64,
     ) -> Result<Vec<u8>, MlSrsError> {
-        let result = self.inner()
-            .export_secret(
-                &label,
-                &context,
-                len as usize
-            )?
+        let result = self
+            .inner()
+            .export_secret(&label, &context, len as usize)?
             .as_bytes()
             .to_vec();
         Ok(result)
@@ -449,7 +446,7 @@ pub struct MLSMemberFFI {
 
 #[uniffi::export]
 impl MLSMemberFFI {
-    pub fn get_indec(&self) -> u32 {
+    pub fn get_index(&self) -> u32 {
         self.index
     }
 

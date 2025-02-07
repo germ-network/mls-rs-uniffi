@@ -2554,7 +2554,7 @@ public func FfiConverterTypeLeafNodeFFI_lower(_ value: LeafNodeFfi) -> UnsafeMut
 
 public protocol MlsMemberFfiProtocol: AnyObject {
     
-    func getIndec()  -> UInt32
+    func getIndex()  -> UInt32
     
     func getSigningIdentity()  -> SigningIdentityFfi
     
@@ -2608,9 +2608,9 @@ open class MlsMemberFfi: MlsMemberFfiProtocol, @unchecked Sendable {
     
 
     
-open func getIndec() -> UInt32  {
+open func getIndex() -> UInt32  {
     return try!  FfiConverterUInt32.lift(try! rustCall() {
-    uniffi_mls_rs_uniffi_ios_fn_method_mlsmemberffi_get_indec(self.uniffiClonePointer(),$0
+    uniffi_mls_rs_uniffi_ios_fn_method_mlsmemberffi_get_index(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -3607,61 +3607,6 @@ public func FfiConverterTypeLifetime_lift(_ buf: RustBuffer) throws -> Lifetime 
 #endif
 public func FfiConverterTypeLifetime_lower(_ value: Lifetime) -> RustBuffer {
     return FfiConverterTypeLifetime.lower(value)
-}
-
-
-/**
- * Update of a member due to a commit.
- */
-public struct MemberUpdate {
-    public var prior: SigningIdentityFfi
-    public var new: SigningIdentityFfi
-
-    // Default memberwise initializers are never public by default, so we
-    // declare one manually.
-    public init(prior: SigningIdentityFfi, new: SigningIdentityFfi) {
-        self.prior = prior
-        self.new = new
-    }
-}
-
-#if compiler(>=6)
-extension MemberUpdate: Sendable {}
-#endif
-
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeMemberUpdate: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> MemberUpdate {
-        return
-            try MemberUpdate(
-                prior: FfiConverterTypeSigningIdentityFFI.read(from: &buf), 
-                new: FfiConverterTypeSigningIdentityFFI.read(from: &buf)
-        )
-    }
-
-    public static func write(_ value: MemberUpdate, into buf: inout [UInt8]) {
-        FfiConverterTypeSigningIdentityFFI.write(value.prior, into: &buf)
-        FfiConverterTypeSigningIdentityFFI.write(value.new, into: &buf)
-    }
-}
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeMemberUpdate_lift(_ buf: RustBuffer) throws -> MemberUpdate {
-    return try FfiConverterTypeMemberUpdate.lift(buf)
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeMemberUpdate_lower(_ value: MemberUpdate) -> RustBuffer {
-    return FfiConverterTypeMemberUpdate.lower(value)
 }
 
 
@@ -5342,7 +5287,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_mls_rs_uniffi_ios_checksum_method_keypackagestorageprotocol_get() != 60492) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_mls_rs_uniffi_ios_checksum_method_mlsmemberffi_get_indec() != 1848) {
+    if (uniffi_mls_rs_uniffi_ios_checksum_method_mlsmemberffi_get_index() != 31214) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_mls_rs_uniffi_ios_checksum_method_mlsmemberffi_get_signing_identity() != 24712) {

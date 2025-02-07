@@ -98,13 +98,6 @@ impl From<mls_rs::MlsMessage> for MessageFFI {
     }
 }
 
-/// Update of a member due to a commit.
-#[derive(Clone, Debug, uniffi::Record)]
-pub struct MemberUpdate {
-    pub prior: Arc<SigningIdentityFFI>,
-    pub new: Arc<SigningIdentityFFI>,
-}
-
 /// A [`mls_rs::group::ReceivedMessage`] wrapper.
 #[derive(Clone, Debug, uniffi::Enum)]
 pub enum ReceivedMessageFFI {
