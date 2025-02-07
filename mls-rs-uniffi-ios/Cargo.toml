@@ -9,7 +9,7 @@ crate-type = ["cdylib", "staticlib"]
 name = "mls_rs_uniffi_ios"
 
 [dependencies]
-uniffi = { git = "https://github.com/mozilla/uniffi-rs/", version = "0.28.3" }
+uniffi = { git = "https://github.com/mozilla/uniffi-rs/", version = "0.29.0" }
 mls-rs = { git = "https://github.com/germ-mark/mls-rs/", branch="germ-lite-fork"}
 mls-rs-core = { git = "https://github.com/germ-mark/mls-rs/", branch="germ-lite-fork"}
 mls-rs-crypto-cryptokit = { git = "https://github.com/germ-mark/mls-rs/", branch="germ-lite-fork"}
