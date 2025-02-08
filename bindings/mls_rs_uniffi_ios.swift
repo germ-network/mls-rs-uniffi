@@ -2625,6 +2625,8 @@ public protocol MessageFfiProtocol: AnyObject {
     
     func groupId()  -> Data?
     
+    func intoKeyPackage() throws  -> KeyPackageFfi
+    
     func privateMessageContentType()  -> UInt8?
     
     func toBytes() throws  -> Data
@@ -2704,6 +2706,13 @@ open func epoch() -> UInt64?  {
 open func groupId() -> Data?  {
     return try!  FfiConverterOptionData.lift(try! rustCall() {
     uniffi_mls_rs_uniffi_ios_fn_method_messageffi_group_id(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
+open func intoKeyPackage()throws  -> KeyPackageFfi  {
+    return try  FfiConverterTypeKeyPackageFFI_lift(try rustCallWithError(FfiConverterTypeMlSrsError_lift) {
+    uniffi_mls_rs_uniffi_ios_fn_method_messageffi_into_key_package(self.uniffiClonePointer(),$0
     )
 })
 }
@@ -5085,6 +5094,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_mls_rs_uniffi_ios_checksum_method_messageffi_group_id() != 55497) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_mls_rs_uniffi_ios_checksum_method_messageffi_into_key_package() != 6865) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_mls_rs_uniffi_ios_checksum_method_messageffi_private_message_content_type() != 62397) {

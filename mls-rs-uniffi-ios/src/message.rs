@@ -51,6 +51,17 @@ impl MessageFFI {
         Some(ciphertext.content_type as u8)
     }
 
+    pub fn into_key_package(&self) -> Result<Arc<KeyPackageFFI>, MlSrsError> {
+        let result = self.inner.clone().into_key_package();
+        match result {
+            None => Err(MlSrsError::UnexpecteMessageFormat),
+            Some(key_package) => {
+                let transformed = key_package.try_into()?;
+                Ok(Arc::new(transformed))
+            }
+        }
+    }
+
     pub fn unchecked_auth_data(
         &self,
         expected_outer_type: u8,
