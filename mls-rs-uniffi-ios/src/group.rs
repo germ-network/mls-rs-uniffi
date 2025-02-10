@@ -156,21 +156,20 @@ impl GroupFFI {
     // /// the proposal messages to send to the group.
     // ///
     // /// See [`mls_rs::Group::propose_add`] for details.
-    // pub async fn propose_add_members(
-    //     &self,
-    //     key_packages: Vec<Arc<Message>>,
-    // ) -> Result<Vec<Arc<Message>>, MlSrsError> {
-    //     let mut group = self.inner().await;
+    pub fn propose_add_members(
+        &self,
+        key_packages: Vec<Arc<MessageFFI>>,
+    ) -> Result<Vec<Arc<MessageFFI>>, MlSrsError> {
+        let mut group = self.inner();
 
-    //     let mut messages = Vec::with_capacity(key_packages.len());
-    //     for key_package in key_packages {
-    //         let key_package = arc_unwrap_or_clone(key_package);
-    //         let message = group.propose_add(key_package.inner, Vec::new()).await?;
-    //         messages.push(Arc::new(message.into()));
-    //     }
-
-    //     Ok(messages)
-    // }
+        let mut messages = Vec::with_capacity(key_packages.len());
+        for key_package in key_packages {
+            let key_package = arc_unwrap_or_clone(key_package);
+            let message = group.propose_add(key_package.inner, Vec::new())?;
+            messages.push(Arc::new(message.into()));
+        }
+        Ok(messages)
+    }
 
     //bring this back for MultiMLS leave
 
