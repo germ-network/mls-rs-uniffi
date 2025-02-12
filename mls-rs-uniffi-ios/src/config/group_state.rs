@@ -1,4 +1,6 @@
 use mls_rs::error::IntoAnyError;
+use mls_rs::mls_rs_codec::{MlsDecode, MlsEncode};
+use mls_rs::psk::{ExternalPskId, PreSharedKey};
 use mls_rs_core::{group::EpochRecord, key_package::KeyPackageData};
 
 use std::fmt::Debug;
@@ -49,6 +51,53 @@ impl From<KeyPackageDataFFI> for KeyPackageData {
             mls_rs_core::crypto::HpkeSecretKey::from(leaf_node_key_data),
             expiration,
         )
+    }
+}
+
+//mirrors mls-rs-core::psk::PreSharedKeyStorage
+#[maybe_async::must_be_sync]
+#[uniffi::export(with_foreign)]
+pub trait PreSharedKeyStorageProtocol: Send + Sync + Debug {
+    fn get(&self, id: Vec<u8>) -> Result<Option<Vec<u8>>, MlSrsError>;
+    fn contains(&self, id: Vec<u8>) -> Result<bool, MlSrsError>;
+    //insert and clear externally
+}
+
+/// Adapt a mls-rs `PreSharedKeyStorage` implementation.
+///
+/// This is used to adapt a mls-rs `PreSharedKeyStorage` implementation
+/// to our own `PreSharedKeyStorageProtocol` trait. This way we can use any
+/// standard mls-rs group state storage from the FFI layer.
+#[derive(Debug)]
+pub(crate) struct PreSharedKeyStorageAdapter<S>(Mutex<S>);
+
+impl<S> PreSharedKeyStorageAdapter<S> {
+    pub fn new(psk_storage: S) -> PreSharedKeyStorageAdapter<S> {
+        Self(Mutex::new(psk_storage))
+    }
+
+    fn inner(&self) -> std::sync::MutexGuard<'_, S> {
+        self.0.lock().unwrap()
+    }
+}
+
+#[maybe_async::must_be_sync]
+impl<S, Err> PreSharedKeyStorageProtocol for PreSharedKeyStorageAdapter<S>
+where
+    S: mls_rs::PreSharedKeyStorage<Error = Err> + Debug,
+    Err: IntoAnyError,
+{
+    fn get(&self, id: Vec<u8>) -> Result<Option<Vec<u8>>, MlSrsError> {
+        self.inner()
+            .get(&ExternalPskId::mls_decode(&mut &*id)?)
+            .map(|option| option.map(|result| result.raw_value().to_vec()))
+            .map_err(|err| err.into_any_error().into())
+    }
+
+    fn contains(&self, id: Vec<u8>) -> Result<bool, MlSrsError> {
+        self.inner()
+            .contains(&ExternalPskId::mls_decode(&mut &*id)?)
+            .map_err(|err| err.into_any_error().into())
     }
 }
 

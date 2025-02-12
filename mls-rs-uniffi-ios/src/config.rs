@@ -4,8 +4,9 @@ use std::sync::Arc;
 
 use mls_rs::{
     client_builder::{self, WithGroupStateStorage, WithKeyPackageRepo},
-    storage_provider::in_memory::InMemoryGroupStateStorage,
-    storage_provider::in_memory::InMemoryKeyPackageStorage,
+    storage_provider::in_memory::{
+        InMemoryGroupStateStorage, InMemoryKeyPackageStorage, InMemoryPreSharedKeyStorage,
+    },
     time::MlsTime,
 };
 
