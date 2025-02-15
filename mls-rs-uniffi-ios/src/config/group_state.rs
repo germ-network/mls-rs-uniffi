@@ -59,7 +59,6 @@ impl From<KeyPackageDataFFI> for KeyPackageData {
 #[uniffi::export(with_foreign)]
 pub trait PreSharedKeyStorageProtocol: Send + Sync + Debug {
     fn get(&self, id: Vec<u8>) -> Result<Option<Vec<u8>>, MlSrsError>;
-    fn contains(&self, id: Vec<u8>) -> Result<bool, MlSrsError>;
     //insert and clear externally
 }
 
@@ -91,12 +90,6 @@ where
         self.inner()
             .get(&ExternalPskId::mls_decode(&mut &*id)?)
             .map(|option| option.map(|result| result.raw_value().to_vec()))
-            .map_err(|err| err.into_any_error().into())
-    }
-
-    fn contains(&self, id: Vec<u8>) -> Result<bool, MlSrsError> {
-        self.inner()
-            .contains(&ExternalPskId::mls_decode(&mut &*id)?)
             .map_err(|err| err.into_any_error().into())
     }
 }

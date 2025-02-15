@@ -1,3 +1,6 @@
+use mls_rs::mls_rs_codec::MlsDecode;
+use mls_rs::mls_rs_codec::MlsEncode;
+use mls_rs::psk::{ExternalPskId, PreSharedKey};
 use mls_rs_core::identity;
 use std::fmt::Debug;
 use std::sync::Arc;
@@ -17,7 +20,7 @@ use mls_rs_crypto_cryptokit::CryptoKitProvider;
 use self::group_context::{CipherSuiteFFI, ExtensionListFFI};
 use self::group_state::{
     GroupStateStorageAdapter, GroupStateStorageProtocol, KeyPackageStorageAdapter,
-    KeyPackageStorageProtocol,
+    KeyPackageStorageProtocol, PreSharedKeyStorageProtocol,
 };
 use crate::config::member_validation_context::MemberValidationContextFFI;
 
@@ -26,6 +29,30 @@ use crate::mls_rs_error::MlSrsError;
 pub mod group_context;
 pub mod group_state;
 pub mod member_validation_context;
+
+#[derive(Debug, Clone)]
+pub struct PreSharedKeyStorageWrapper(Arc<dyn PreSharedKeyStorageProtocol>);
+
+impl From<Arc<dyn PreSharedKeyStorageProtocol>> for PreSharedKeyStorageWrapper {
+    fn from(value: Arc<dyn PreSharedKeyStorageProtocol>) -> Self {
+        Self(value)
+    }
+}
+
+impl mls_rs::PreSharedKeyStorage for PreSharedKeyStorageWrapper {
+    type Error = MlSrsError;
+
+    fn get(&self, psk_id: &ExternalPskId) -> Result<Option<PreSharedKey>, MlSrsError> {
+        let result = self.0.get(psk_id.mls_encode_to_vec()?);
+        match result {
+            Err(error) => Err(error),
+            Ok(option) => match option {
+                None => Ok(None),
+                Some(vector) => Ok(Some(PreSharedKey::mls_decode(&mut &*vector)?)),
+            },
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct ClientKeyPackageStorage(Arc<dyn KeyPackageStorageProtocol>);
