@@ -1,6 +1,6 @@
 use mls_rs::error::IntoAnyError;
-use mls_rs::mls_rs_codec::{MlsDecode, MlsEncode};
-use mls_rs::psk::{ExternalPskId, PreSharedKey};
+use mls_rs::mls_rs_codec::MlsDecode;
+use mls_rs::psk::ExternalPskId;
 use mls_rs_core::{group::EpochRecord, key_package::KeyPackageData};
 
 use std::fmt::Debug;

@@ -1,5 +1,4 @@
-use mls_rs::mls_rs_codec::MlsDecode;
-use mls_rs::mls_rs_codec::MlsEncode;
+use mls_rs::mls_rs_codec::{MlsDecode, MlsEncode};
 use mls_rs::psk::{ExternalPskId, PreSharedKey};
 use mls_rs_core::identity;
 use std::fmt::Debug;
@@ -20,7 +19,7 @@ use mls_rs_crypto_cryptokit::CryptoKitProvider;
 use self::group_context::{CipherSuiteFFI, ExtensionListFFI};
 use self::group_state::{
     GroupStateStorageAdapter, GroupStateStorageProtocol, KeyPackageStorageAdapter,
-    KeyPackageStorageProtocol, PreSharedKeyStorageProtocol,
+    KeyPackageStorageProtocol, PreSharedKeyStorageAdapter, PreSharedKeyStorageProtocol,
 };
 use crate::config::member_validation_context::MemberValidationContextFFI;
 
@@ -151,6 +150,7 @@ pub struct ClientConfigFFI {
     pub client_keypackage_storage: Arc<dyn KeyPackageStorageProtocol>,
     pub group_state_storage: Arc<dyn GroupStateStorageProtocol>,
     pub identity_provider_storage: Arc<dyn IdentityProviderProtocol>,
+    pub pre_shared_key_storage: Arc<dyn PreSharedKeyStorageProtocol>,
     /// Use the ratchet tree extension. If this is false, then you
     /// must supply `ratchet_tree` out of band to clients.
     pub use_ratchet_tree_extension: bool,
@@ -164,6 +164,9 @@ impl Default for ClientConfigFFI {
             )),
             group_state_storage: Arc::new(GroupStateStorageAdapter::new(
                 InMemoryGroupStateStorage::new(),
+            )),
+            pre_shared_key_storage: Arc::new(PreSharedKeyStorageAdapter::new(
+                InMemoryPreSharedKeyStorage::default(),
             )),
             identity_provider_storage: Arc::new(BasicIdentityProviderShim::new()),
             use_ratchet_tree_extension: true,
