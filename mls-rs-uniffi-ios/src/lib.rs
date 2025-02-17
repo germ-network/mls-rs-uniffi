@@ -134,7 +134,7 @@ mod tests {
             false,
         )?;
 
-        let extracted_commit_maybe = next_message.unchecked_auth_data(
+        let extracted_commit_maybe = next_message.unchecked_auth_data_message(
             mls_rs::group::ContentType::Application as u8,
             Some(mls_rs::group::ContentType::Commit as u8),
         )?;
@@ -195,7 +195,7 @@ mod tests {
             true,
         )?;
 
-        let _inner_combined = message.unchecked_auth_data(
+        let _inner_combined = message.unchecked_auth_data_message(
             mls_rs::group::ContentType::Application as u8,
             Some(mls_rs::group::ContentType::Proposal as u8),
         );

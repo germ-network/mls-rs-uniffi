@@ -62,7 +62,50 @@ impl MessageFFI {
         }
     }
 
+    //For a TwoMLS first message that contains the Combined Welcome
+    //in its authenticated data
     pub fn unchecked_auth_data(
+        &self,
+        expected_outer_type: u8,
+    ) -> Result<Option<Vec<u8>>, MlSrsError> {
+        let ciphertext_maybe = self.inner.private_message();
+
+        let Some(ciphertext) = ciphertext_maybe else {
+            return Err(MlSrsError::MlsError {
+                inner: MlsError::UnexpectedMessageType,
+            });
+        };
+        if ciphertext.content_type as u8 != expected_outer_type {
+            return Err(MlSrsError::UnexpectedMessageTypeDetailed(
+                expected_outer_type,
+                ciphertext.content_type as u8,
+            ));
+        }
+
+        if ciphertext.authenticated_data.is_empty() {
+            return Ok(None);
+        }
+
+        Ok(Some(ciphertext.authenticated_data.as_slice().to_vec()))
+
+        // let inner_message = MlsMessage::from_bytes(ciphertext.authenticated_data.as_slice())?;
+        // let inner_content_type = inner_message
+        //     .clone()
+        //     .private_message()
+        //     .map(|c| c.content_type as u8);
+        // if inner_content_type != expected_inner_type {
+        //     return Err(MlSrsError::UnexpectedMessageTypeDetailed(
+        //         expected_inner_type.unwrap_or(0),
+        //         inner_content_type.unwrap_or(0),
+        //     ));
+        // }
+
+        // Ok(Some(Arc::new(MessageFFI {
+        //     inner: inner_message,
+        // })))
+    }
+
+    pub fn unchecked_auth_data_message(
         &self,
         expected_outer_type: u8,
         expected_inner_type: Option<u8>,
