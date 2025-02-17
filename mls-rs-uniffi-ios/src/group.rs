@@ -2,6 +2,8 @@ use crate::arc_unwrap_or_clone;
 use crate::config::{SignatureSecretKeyFFI, SigningIdentityFFI};
 use crate::message::{ProposalFFI, ReceivedMessageFFI};
 use crate::MlSrsError;
+use mls_rs::mls_rs_codec::MlsDecode;
+use mls_rs::psk::ExternalPskId;
 use std::sync::{Arc, Mutex};
 
 use crate::config::UniFFIConfig;
@@ -169,6 +171,20 @@ impl GroupFFI {
             messages.push(Arc::new(message.into()));
         }
         Ok(messages)
+    }
+
+    pub fn propose_external_psk(
+        &self,
+        psk_id: Vec<u8>,
+        authenticated_data: Vec<u8>,
+    ) -> Result<MessageFFI, MlSrsError> {
+        self.inner()
+            .propose_external_psk(
+                ExternalPskId::mls_decode(&mut &*psk_id)?,
+                authenticated_data,
+            )
+            .map(Into::into)
+            .map_err(Into::into)
     }
 
     //bring this back for MultiMLS leave
