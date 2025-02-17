@@ -1,5 +1,5 @@
 use mls_rs::error::IntoAnyError;
-use mls_rs::mls_rs_codec::MlsDecode;
+use mls_rs::mls_rs_codec::{MlsDecode, MlsEncode};
 use mls_rs::psk::ExternalPskId;
 use mls_rs_core::{group::EpochRecord, key_package::KeyPackageData};
 
@@ -60,6 +60,15 @@ impl From<KeyPackageDataFFI> for KeyPackageData {
 pub trait PreSharedKeyStorageProtocol: Send + Sync + Debug {
     fn get(&self, id: Vec<u8>) -> Result<Option<Vec<u8>>, MlSrsError>;
     //insert and clear externally
+}
+
+//ExternalPskId's interior bare data is private, so we store it as MLS encoded
+//If we inject it into the store, we need to be able to format it as MLS encoded
+#[uniffi::export]
+pub fn mls_encode(external_psk_id: Vec<u8>) -> Result<Vec<u8>, MlSrsError> {
+    ExternalPskId::new(external_psk_id)
+        .mls_encode_to_vec()
+        .map_err(Into::into)
 }
 
 /// Adapt a mls-rs `PreSharedKeyStorage` implementation.

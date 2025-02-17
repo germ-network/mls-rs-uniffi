@@ -1,4 +1,4 @@
-use mls_rs::mls_rs_codec::{MlsDecode, MlsEncode};
+use mls_rs::mls_rs_codec::MlsEncode;
 use mls_rs::psk::{ExternalPskId, PreSharedKey};
 use mls_rs_core::identity;
 use std::fmt::Debug;
@@ -47,7 +47,7 @@ impl mls_rs::PreSharedKeyStorage for PreSharedKeyStorageWrapper {
             Err(error) => Err(error),
             Ok(option) => match option {
                 None => Ok(None),
-                Some(vector) => Ok(Some(PreSharedKey::mls_decode(&mut &*vector)?)),
+                Some(vector) => Ok(Some(vector.into())),
             },
         }
     }
