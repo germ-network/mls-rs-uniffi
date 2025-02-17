@@ -56,6 +56,7 @@ impl ClientFFI {
             .with_encryption_options(encryption_options);
         let client = mls_rs::Client::builder()
             .crypto_provider(crypto_provider)
+            .psk_store(client_config.pre_shared_key_storage.into())
             .identity_provider(client_config.identity_provider_storage.into())
             .signing_identity(signing_identity, secret_key.into(), cipher_suite.into())
             .key_package_repo(client_config.client_keypackage_storage.into())

@@ -5,7 +5,7 @@ use std::fmt::Debug;
 use std::sync::Arc;
 
 use mls_rs::{
-    client_builder::{self, WithGroupStateStorage, WithKeyPackageRepo},
+    client_builder::{self, WithGroupStateStorage, WithKeyPackageRepo, WithPskStore},
     storage_provider::in_memory::{
         InMemoryGroupStateStorage, InMemoryKeyPackageStorage, InMemoryPreSharedKeyStorage,
     },
@@ -140,7 +140,10 @@ pub type UniFFIConfig = client_builder::WithIdentityProvider<
         CryptoKitProvider,
         WithKeyPackageRepo<
             ClientKeyPackageStorage,
-            WithGroupStateStorage<ClientGroupStorage, client_builder::BaseConfig>,
+            WithGroupStateStorage<
+                ClientGroupStorage,
+                WithPskStore<PreSharedKeyStorageWrapper, client_builder::BaseConfig>,
+            >,
         >,
     >,
 >;
