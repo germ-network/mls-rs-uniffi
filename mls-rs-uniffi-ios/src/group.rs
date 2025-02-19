@@ -300,8 +300,13 @@ impl GroupFFI {
                     }
                     _ => todo!("External and NewMember proposal senders are not supported"),
                 };
+                let authenticated_data = proposal_message.authenticated_data.clone().to_vec();
                 let proposal = proposal_message.try_into()?;
-                Ok(ReceivedMessageFFI::ReceivedProposal { sender, proposal })
+                Ok(ReceivedMessageFFI::ReceivedProposal {
+                    sender,
+                    proposal,
+                    authenticated_data,
+                })
             }
             // TODO: group::ReceivedMessage::GroupInfo does not have any
             // public methods (unless the "ffi" Cargo feature is set).

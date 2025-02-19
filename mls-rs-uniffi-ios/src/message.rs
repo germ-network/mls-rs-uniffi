@@ -177,6 +177,7 @@ pub enum ReceivedMessageFFI {
     ReceivedProposal {
         sender: Arc<SigningIdentityFFI>,
         proposal: ProposalFFI,
+        authenticated_data: Vec<u8>,
     },
 
     /// Validated GroupInfo object.
