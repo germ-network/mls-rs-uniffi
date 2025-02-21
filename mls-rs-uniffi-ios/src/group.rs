@@ -368,9 +368,9 @@ impl GroupFFI {
         }
     }
 
-    // pub async fn clear_proposal_cache(&self) {
-    //     self.inner().await.clear_proposal_cache()
-    // }
+    pub fn clear_proposal_cache(&self) {
+        self.inner().clear_proposal_cache()
+    }
 
     // pub async fn proposal_cache_is_empty(&self) -> bool {
     //     self.inner().await.proposal_cache_is_empty()
