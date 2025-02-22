@@ -1,3 +1,8 @@
+# mls-rs uniffi for mls-rs
+This moves our adaptation of the uniffi crati in mls-rs (https://github.com/germ-mark/mls-rs)
+into its own indpendent repo so we can tailor this more closely for our needs
+and maintain a lighter fork of mls-rs.
+
 # iOS XCFramework
 Build toolchain to generate a XCFramework for mls-rs for an iOS app, using uniffi to generate bindings
 
