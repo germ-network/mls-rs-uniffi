@@ -1,4 +1,5 @@
 use crate::config::group_context::CipherSuiteFFI;
+use crate::config::SignatureKeypairFFI;
 use crate::config::SigningIdentityFFI;
 use crate::config::{ClientConfigFFI, UniFFIConfig};
 use crate::group::{GroupFFI, JoinInfo};
@@ -34,7 +35,7 @@ impl ClientFFI {
     #[uniffi::constructor]
     pub fn new(
         id: Vec<u8>,
-        signature_keypair: SignatureKeypair,
+        signature_keypair: SignatureKeypairFFI,
         client_config: ClientConfigFFI,
     ) -> Self {
         let cipher_suite = signature_keypair.cipher_suite;
@@ -160,54 +161,6 @@ impl ClientFFI {
     }
 }
 
-/// A ([`SignaturePublicKey`], [`SignatureSecretKey`]) pair.
-#[derive(uniffi::Record, Clone, Debug)]
-pub struct SignatureKeypair {
-    pub cipher_suite: CipherSuiteFFI,
-    pub public_key: SignaturePublicKey,
-    pub secret_key: SignatureSecretKey,
-}
-
-/// A [`mls_rs::crypto::SignaturePublicKey`] wrapper.
-#[derive(Clone, Debug, uniffi::Record)]
-pub struct SignaturePublicKey {
-    pub bytes: Vec<u8>,
-}
-
-impl From<mls_rs::crypto::SignaturePublicKey> for SignaturePublicKey {
-    fn from(public_key: mls_rs::crypto::SignaturePublicKey) -> Self {
-        Self {
-            bytes: public_key.to_vec(),
-        }
-    }
-}
-
-impl From<SignaturePublicKey> for mls_rs::crypto::SignaturePublicKey {
-    fn from(public_key: SignaturePublicKey) -> Self {
-        Self::new(public_key.bytes)
-    }
-}
-
-/// A [`mls_rs::crypto::SignatureSecretKey`] wrapper.
-#[derive(Clone, Debug, uniffi::Record)]
-pub struct SignatureSecretKey {
-    pub bytes: Vec<u8>,
-}
-
-impl From<mls_rs::crypto::SignatureSecretKey> for SignatureSecretKey {
-    fn from(secret_key: mls_rs::crypto::SignatureSecretKey) -> Self {
-        Self {
-            bytes: secret_key.as_bytes().to_vec(),
-        }
-    }
-}
-
-impl From<SignatureSecretKey> for mls_rs::crypto::SignatureSecretKey {
-    fn from(secret_key: SignatureSecretKey) -> Self {
-        Self::new(secret_key.bytes)
-    }
-}
-
 /// Generate a MLS signature keypair.
 ///
 /// This will use the default mls-lite crypto provider.
@@ -218,7 +171,7 @@ impl From<SignatureSecretKey> for mls_rs::crypto::SignatureSecretKey {
 #[uniffi::export]
 pub async fn generate_signature_keypair(
     cipher_suite: CipherSuiteFFI,
-) -> Result<SignatureKeypair, MlSrsError> {
+) -> Result<SignatureKeypairFFI, MlSrsError> {
     let crypto_provider = mls_rs_crypto_cryptokit::CryptoKitProvider::default();
     let cipher_suite_provider = crypto_provider
         .cipher_suite_provider(cipher_suite.into())
@@ -229,7 +182,7 @@ pub async fn generate_signature_keypair(
         .await
         .map_err(|err| MlsError::CryptoProviderError(err.into_any_error()))?;
 
-    Ok(SignatureKeypair {
+    Ok(SignatureKeypairFFI {
         cipher_suite,
         public_key: public_key.into(),
         secret_key: secret_key.into(),
