@@ -43,6 +43,10 @@ impl MessageFFI {
         self.inner.epoch()
     }
 
+    pub fn is_welcome(&self) -> bool {
+        self.inner.is_welcome()
+    }
+
     pub fn private_message_content_type(&self) -> Option<u8> {
         let ciphertext_maybe = self.inner.private_message();
         let Some(ciphertext) = ciphertext_maybe else {

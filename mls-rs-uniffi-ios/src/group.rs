@@ -133,6 +133,14 @@ impl GroupFFI {
         commit_output.try_into()
     }
 
+    // pub fn commit_applying_proposals(&self) -> Result<CommitOutputFFI, MlSrsError> {
+    //     let mut group = self.inner();
+    //     let commit_output = group
+    //         .apply_pending_commit()
+    //         .commit(Vec::new())?;
+    //     commit_output.try_into()
+    // }
+
     /// Commit the addition of one or more members.
     ///
     /// The members are representated by key packages. The result is
