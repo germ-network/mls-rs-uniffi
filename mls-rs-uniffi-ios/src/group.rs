@@ -133,6 +133,19 @@ impl GroupFFI {
         commit_output.try_into()
     }
 
+    pub fn commit_new_identity(
+        &self,
+        signer: SignatureSecretKeyFFI,
+        signing_identity: Arc<SigningIdentityFFI>,
+    ) -> Result<CommitOutputFFI, MlSrsError> {
+        let mut group = self.inner();
+        let mut commit_builder = group.commit_builder();
+        commit_builder =
+            commit_builder.set_new_signing_identity(signer.into(), signing_identity.inner.clone());
+        let commit_output = commit_builder.build()?;
+        commit_output.try_into()
+    }
+
     // pub fn commit_applying_proposals(&self) -> Result<CommitOutputFFI, MlSrsError> {
     //     let mut group = self.inner();
     //     let commit_output = group
