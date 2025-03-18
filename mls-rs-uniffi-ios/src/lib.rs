@@ -122,7 +122,7 @@ mod tests {
         let update = bob_group.propose_update(None, None, vec![])?;
         let _ = bob_group.process_incoming_message(update.clone().into())?;
 
-        let commit_output = bob_group.commit()?;
+        let commit_output = bob_group.commit(Vec::new())?;
         println!(
             "commit_output unused {:?}",
             commit_output.unused_proposals.len()
@@ -167,7 +167,7 @@ mod tests {
         // assert!(bob_group.proposal_cache_is_empty());
         // let _ = bob_group.process_incoming_message(second_update.into())?;
 
-        let commit_output = bob_group.commit()?;
+        let commit_output = bob_group.commit(Vec::new())?;
         println!(
             "commit_output unused {:?}",
             commit_output.unused_proposals.len()
@@ -184,7 +184,7 @@ mod tests {
         let (alice_group, _bob_group) = setup_test()?;
 
         //empty commit
-        let commit_output = alice_group.commit()?;
+        let commit_output = alice_group.commit(Vec::new())?;
         let _ = alice_group.process_incoming_message(commit_output.clone().commit_message)?;
         let update =
             alice_group.propose_update(None, None, commit_output.commit_message.to_bytes()?)?;

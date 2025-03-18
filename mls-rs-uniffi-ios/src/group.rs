@@ -127,9 +127,9 @@ impl GroupFFI {
     ///
     /// Returns the resulting commit message. See
     /// [`mls_rs::Group::commit`] for details.
-    pub fn commit(&self) -> Result<CommitOutputFFI, MlSrsError> {
+    pub fn commit(&self, authenticated_data: Vec<u8>) -> Result<CommitOutputFFI, MlSrsError> {
         let mut group = self.inner();
-        let commit_output = group.commit(Vec::new())?;
+        let commit_output = group.commit(authenticated_data)?;
         commit_output.try_into()
     }
 
