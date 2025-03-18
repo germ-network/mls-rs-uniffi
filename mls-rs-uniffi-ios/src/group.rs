@@ -308,10 +308,11 @@ impl GroupFFI {
             ReceivedMessage::Commit(commit_message) => {
                 let committer =
                     Arc::new(index_to_identity(&group, commit_message.committer)?.into());
-
+                let authenticated_data = commit_message.authenticated_data.to_vec();
                 Ok(ReceivedMessageFFI::Commit {
                     committer,
                     effect: commit_message.effect.into(),
+                    authenticated_data,
                 })
             }
             ReceivedMessage::Proposal(proposal_message) => {

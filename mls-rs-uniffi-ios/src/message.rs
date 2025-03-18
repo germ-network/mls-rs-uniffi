@@ -173,6 +173,7 @@ pub enum ReceivedMessageFFI {
     Commit {
         committer: Arc<SigningIdentityFFI>,
         effect: CommitEffectFFI,
+        authenticated_data: Vec<u8>,
     },
 
     // TODO(mgeisler): rename to `Proposal` when
