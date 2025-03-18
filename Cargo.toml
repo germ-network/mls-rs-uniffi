@@ -6,5 +6,5 @@ members = [
 ]
 
 default-members = [
-    "mls-rs-uniffi-ios", "uniffi-bindgen",
+    "mls-rs-uniffi-ios",
 ]

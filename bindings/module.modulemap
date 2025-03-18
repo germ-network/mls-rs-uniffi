@@ -1,0 +1,4 @@
+module mls_rs_uniffi_iosFFI {
+    header "mls_rs_uniffi_iosFFI.h"
+    export *
+}
