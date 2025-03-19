@@ -137,11 +137,13 @@ impl GroupFFI {
         &self,
         signer: SignatureSecretKeyFFI,
         signing_identity: Arc<SigningIdentityFFI>,
+        authenticated_data: Vec<u8>,
     ) -> Result<CommitOutputFFI, MlSrsError> {
         let mut group = self.inner();
         let mut commit_builder = group.commit_builder();
-        commit_builder =
-            commit_builder.set_new_signing_identity(signer.into(), signing_identity.inner.clone());
+        commit_builder = commit_builder
+            .set_new_signing_identity(signer.into(), signing_identity.inner.clone())
+            .authenticated_data(authenticated_data);
         let commit_output = commit_builder.build()?;
         commit_output.try_into()
     }
