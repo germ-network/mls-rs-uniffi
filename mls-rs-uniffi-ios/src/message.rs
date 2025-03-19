@@ -212,6 +212,7 @@ pub enum ProposalFFI {
         sender_index: u32,
     },
     // Replace(Arc<ReplaceProposalFFI>),
+    Psk,
     Remove(u32), // Psk(PreSharedKeyProposal),
                  // ReInit(ReInitProposal),
                  // ExternalInit(ExternalInit),
@@ -252,6 +253,7 @@ impl ProposalFFI {
                 sender_index: _,
             } => Some(new.clone()),
             // ProposalFFI::Replace(r) => Some(Arc::new(r.leaf_node.signing_identity.clone())),
+            ProposalFFI::Psk => None,
             ProposalFFI::Remove(_) => None,
         }
     }
@@ -276,6 +278,7 @@ impl TryFrom<ProposalInfo<Proposal>> for ProposalFFI {
                     _ => Err(MlSrsError::UnexpectedProposalSender),
                 }
             }
+            Proposal::Psk(_) => Ok(ProposalFFI::Psk),
             _ => Ok(ProposalFFI::Remove(0)),
         }
     }
