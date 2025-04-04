@@ -145,13 +145,12 @@ try ScriptTask(
     path: URL(fileURLWithPath: "/usr/bin/xcodebuild"),
     arguments: [
         "-create-xcframework",
-        //the ios framework
+      
+         //the simulator framework combining arm and x86_64 targets
         "-library", "./buildIos/libmls_rs_uniffi_ios_sim_combined.a", "-headers", "./bindings",
-        //the simulator framework combining arm and x86_64 targets
-        "-library", "./target/aarch64-apple-ios/release/libmls_rs_uniffi_ios.a", 
-        "-library", "./target/aarch64-apple-darwin/release/libmls_rs_uniffi_ios.a",
-        "-headers",
-        "./bindings",
+          //the ios framework
+        "-library", "./target/aarch64-apple-ios/release/libmls_rs_uniffi_ios.a", "-headers",  "./bindings",
+        "-library", "./target/aarch64-apple-darwin/release/libmls_rs_uniffi_ios.a", "-headers", "./bindings",
         "-output", "buildIos/MLSrs.xcframework",
     ]
 )
