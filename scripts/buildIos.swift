@@ -148,7 +148,9 @@ try ScriptTask(
         //the ios framework
         "-library", "./buildIos/libmls_rs_uniffi_ios_sim_combined.a", "-headers", "./bindings",
         //the simulator framework combining arm and x86_64 targets
-        "-library", "./target/aarch64-apple-ios/release/libmls_rs_uniffi_ios.a", "-headers",
+        "-library", "./target/aarch64-apple-ios/release/libmls_rs_uniffi_ios.a", 
+        "-library", "./target/aarch64-apple-darwin/release/libmls_rs_uniffi_ios.a",
+        "-headers",
         "./bindings",
         "-output", "buildIos/MLSrs.xcframework",
     ]
