@@ -42,7 +42,7 @@ let cargoPath = cargoBinPath.appending(path: "cargo")
 
 try ScriptTask(
     path: cargoBinPath.appending(path: "rustup"),
-    arguments: ["target", "add", "aarch64-apple-ios-sim", "aarch64-apple-ios", "x86_64-apple-ios"]
+    arguments: ["target", "add", "aarch64-apple-ios-sim", "aarch64-apple-ios", "x86_64-apple-ios", "aarch64-apple-darwin"]
 )
 .run(allowingExitCodes: [1])
 
@@ -104,6 +104,13 @@ try ScriptTask(
     path: cargoPath,
     arguments: ["build", "--release", "--target=aarch64-apple-ios"],
     env: ["IPHONEOS_DEPLOYMENT_TARGET": "17.0"]
+)
+.run()
+
+try ScriptTask(
+    path: cargoPath,
+    arguments: ["build", "--release", "--target=aarch64-apple-darwin"],
+    env: ["MACOS_DEPLOYMENT_TARGET": "10_15"]
 )
 .run()
 

@@ -395,7 +395,13 @@ fileprivate final class UniffiHandleMap<T>: @unchecked Sendable {
 
 
 // Public interface members begin here.
-
+// Magic number for the Rust proxy to call using the same mechanism as every other method,
+// to free the callback once it's dropped by Rust.
+private let IDX_CALLBACK_FREE: Int32 = 0
+// Callback return codes
+private let UNIFFI_CALLBACK_SUCCESS: Int32 = 0
+private let UNIFFI_CALLBACK_ERROR: Int32 = 1
+private let UNIFFI_CALLBACK_UNEXPECTED_ERROR: Int32 = 2
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
@@ -552,7 +558,7 @@ fileprivate struct FfiConverterData: FfiConverterRustBuffer {
  *
  * See [`mls_rs::Client`] for details.
  */
-public protocol ClientFfiProtocol: AnyObject {
+public protocol ClientFfiProtocol: AnyObject, Sendable {
     
     /**
      * Create and immediately join a new group.
@@ -618,6 +624,9 @@ open class ClientFfi: ClientFfiProtocol, @unchecked Sendable {
     // TODO: We'd like this to be `private` but for Swifty reasons,
     // we can't implement `FfiConverter` without making this `required` and we can't
     // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
     required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
         self.pointer = pointer
     }
@@ -648,12 +657,12 @@ open class ClientFfi: ClientFfiProtocol, @unchecked Sendable {
      *
      * See [`mls_rs::Client::builder`] for details.
      */
-public convenience init(id: Data, signatureKeypair: SignatureKeypair, clientConfig: ClientConfigFfi) {
+public convenience init(id: Data, signatureKeypair: SignatureKeypairFfi, clientConfig: ClientConfigFfi) {
     let pointer =
         try! rustCall() {
     uniffi_mls_rs_uniffi_ios_fn_constructor_clientffi_new(
         FfiConverterData.lower(id),
-        FfiConverterTypeSignatureKeypair_lower(signatureKeypair),
+        FfiConverterTypeSignatureKeypairFFI_lower(signatureKeypair),
         FfiConverterTypeClientConfigFFI_lower(clientConfig),$0
     )
 }
@@ -804,7 +813,7 @@ public func FfiConverterTypeClientFFI_lower(_ value: ClientFfi) -> UnsafeMutable
 /**
  * A [`mls_rs::Extension`] wrapper.
  */
-public protocol ExtensionFfiProtocol: AnyObject {
+public protocol ExtensionFfiProtocol: AnyObject, Sendable {
     
 }
 /**
@@ -824,6 +833,9 @@ open class ExtensionFfi: ExtensionFfiProtocol, @unchecked Sendable {
     // TODO: We'd like this to be `private` but for Swifty reasons,
     // we can't implement `FfiConverter` without making this `required` and we can't
     // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
     required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
         self.pointer = pointer
     }
@@ -920,7 +932,7 @@ public func FfiConverterTypeExtensionFFI_lower(_ value: ExtensionFfi) -> UnsafeM
 /**
  * A [`mls_rs::ExtensionList`] wrapper.
  */
-public protocol ExtensionListFfiProtocol: AnyObject {
+public protocol ExtensionListFfiProtocol: AnyObject, Sendable {
     
 }
 /**
@@ -940,6 +952,9 @@ open class ExtensionListFfi: ExtensionListFfiProtocol, @unchecked Sendable {
     // TODO: We'd like this to be `private` but for Swifty reasons,
     // we can't implement `FfiConverter` without making this `required` and we can't
     // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
     required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
         self.pointer = pointer
     }
@@ -1041,7 +1056,7 @@ public func FfiConverterTypeExtensionListFFI_lower(_ value: ExtensionListFfi) ->
  *
  * See [`mls_rs::Group`] for details.
  */
-public protocol GroupFfiProtocol: AnyObject {
+public protocol GroupFfiProtocol: AnyObject, Sendable {
     
     /**
      * Commit the addition of one or more members.
@@ -1053,6 +1068,8 @@ public protocol GroupFfiProtocol: AnyObject {
      */
     func addMembers(keyPackages: [MessageFfi]) throws  -> CommitOutputFfi
     
+    func clearProposalCache() 
+    
     /**
      * Perform a commit of received proposals (or an empty commit).
      *
@@ -1062,7 +1079,9 @@ public protocol GroupFfiProtocol: AnyObject {
      * Returns the resulting commit message. See
      * [`mls_rs::Group::commit`] for details.
      */
-    func commit() throws  -> CommitOutputFfi
+    func commit(authenticatedData: Data) throws  -> CommitOutputFfi
+    
+    func commitNewIdentity(signer: SignatureSecretKeyFfi, signingIdentity: SigningIdentityFfi, authenticatedData: Data) throws  -> CommitOutputFfi
     
     func currentEpoch()  -> UInt64
     
@@ -1096,6 +1115,10 @@ public protocol GroupFfiProtocol: AnyObject {
      */
     func processIncomingMessage(message: MessageFfi) throws  -> ReceivedMessageFfi
     
+    func proposeAddMembers(keyPackages: [MessageFfi]) throws  -> [MessageFfi]
+    
+    func proposeExternalPsk(pskId: Data, authenticatedData: Data) throws  -> MessageFfi
+    
     func proposeUpdate(signer: SignatureSecretKeyFfi?, signingIdentity: SigningIdentityFfi?, authenticatedData: Data) throws  -> MessageFfi
     
     /**
@@ -1127,6 +1150,9 @@ open class GroupFfi: GroupFfiProtocol, @unchecked Sendable {
     // TODO: We'd like this to be `private` but for Swifty reasons,
     // we can't implement `FfiConverter` without making this `required` and we can't
     // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
     required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
         self.pointer = pointer
     }
@@ -1178,6 +1204,12 @@ open func addMembers(keyPackages: [MessageFfi])throws  -> CommitOutputFfi  {
 })
 }
     
+open func clearProposalCache()  {try! rustCall() {
+    uniffi_mls_rs_uniffi_ios_fn_method_groupffi_clear_proposal_cache(self.uniffiClonePointer(),$0
+    )
+}
+}
+    
     /**
      * Perform a commit of received proposals (or an empty commit).
      *
@@ -1187,9 +1219,20 @@ open func addMembers(keyPackages: [MessageFfi])throws  -> CommitOutputFfi  {
      * Returns the resulting commit message. See
      * [`mls_rs::Group::commit`] for details.
      */
-open func commit()throws  -> CommitOutputFfi  {
+open func commit(authenticatedData: Data)throws  -> CommitOutputFfi  {
     return try  FfiConverterTypeCommitOutputFFI_lift(try rustCallWithError(FfiConverterTypeMlSrsError_lift) {
-    uniffi_mls_rs_uniffi_ios_fn_method_groupffi_commit(self.uniffiClonePointer(),$0
+    uniffi_mls_rs_uniffi_ios_fn_method_groupffi_commit(self.uniffiClonePointer(),
+        FfiConverterData.lower(authenticatedData),$0
+    )
+})
+}
+    
+open func commitNewIdentity(signer: SignatureSecretKeyFfi, signingIdentity: SigningIdentityFfi, authenticatedData: Data)throws  -> CommitOutputFfi  {
+    return try  FfiConverterTypeCommitOutputFFI_lift(try rustCallWithError(FfiConverterTypeMlSrsError_lift) {
+    uniffi_mls_rs_uniffi_ios_fn_method_groupffi_commit_new_identity(self.uniffiClonePointer(),
+        FfiConverterTypeSignatureSecretKeyFFI_lower(signer),
+        FfiConverterTypeSigningIdentityFFI_lower(signingIdentity),
+        FfiConverterData.lower(authenticatedData),$0
     )
 })
 }
@@ -1274,6 +1317,23 @@ open func processIncomingMessage(message: MessageFfi)throws  -> ReceivedMessageF
 })
 }
     
+open func proposeAddMembers(keyPackages: [MessageFfi])throws  -> [MessageFfi]  {
+    return try  FfiConverterSequenceTypeMessageFFI.lift(try rustCallWithError(FfiConverterTypeMlSrsError_lift) {
+    uniffi_mls_rs_uniffi_ios_fn_method_groupffi_propose_add_members(self.uniffiClonePointer(),
+        FfiConverterSequenceTypeMessageFFI.lower(keyPackages),$0
+    )
+})
+}
+    
+open func proposeExternalPsk(pskId: Data, authenticatedData: Data)throws  -> MessageFfi  {
+    return try  FfiConverterTypeMessageFFI_lift(try rustCallWithError(FfiConverterTypeMlSrsError_lift) {
+    uniffi_mls_rs_uniffi_ios_fn_method_groupffi_propose_external_psk(self.uniffiClonePointer(),
+        FfiConverterData.lower(pskId),
+        FfiConverterData.lower(authenticatedData),$0
+    )
+})
+}
+    
 open func proposeUpdate(signer: SignatureSecretKeyFfi?, signingIdentity: SigningIdentityFfi?, authenticatedData: Data)throws  -> MessageFfi  {
     return try  FfiConverterTypeMessageFFI_lift(try rustCallWithError(FfiConverterTypeMlSrsError_lift) {
     uniffi_mls_rs_uniffi_ios_fn_method_groupffi_propose_update(self.uniffiClonePointer(),
@@ -1352,7 +1412,7 @@ public func FfiConverterTypeGroupFFI_lower(_ value: GroupFfi) -> UnsafeMutableRa
 
 
 
-public protocol GroupStateStorageProtocol: AnyObject {
+public protocol GroupStateStorageProtocol: AnyObject, Sendable {
     
     func state(groupId: Data) throws  -> Data?
     
@@ -1377,6 +1437,9 @@ open class GroupStateStorageProtocolImpl: GroupStateStorageProtocol, @unchecked 
     // TODO: We'd like this to be `private` but for Swifty reasons,
     // we can't implement `FfiConverter` without making this `required` and we can't
     // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
     required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
         self.pointer = pointer
     }
@@ -1449,13 +1512,7 @@ open func maxEpochId(groupId: Data)throws  -> UInt64?  {
     
 
 }
-// Magic number for the Rust proxy to call using the same mechanism as every other method,
-// to free the callback once it's dropped by Rust.
-private let IDX_CALLBACK_FREE: Int32 = 0
-// Callback return codes
-private let UNIFFI_CALLBACK_SUCCESS: Int32 = 0
-private let UNIFFI_CALLBACK_ERROR: Int32 = 1
-private let UNIFFI_CALLBACK_UNEXPECTED_ERROR: Int32 = 2
+
 
 // Put the implementation in a struct so we don't pollute the top-level namespace
 fileprivate struct UniffiCallbackInterfaceGroupStateStorageProtocol {
@@ -1650,7 +1707,7 @@ public func FfiConverterTypeGroupStateStorageProtocol_lower(_ value: GroupStateS
  * Identity system that can be used to validate a
  * [`SigningIdentity`](mls-rs-core::identity::SigningIdentity)
  */
-public protocol IdentityProviderProtocol: AnyObject {
+public protocol IdentityProviderProtocol: AnyObject, Sendable {
     
     /**
      * Determine if `signing_identity` is valid for a group member.
@@ -1713,6 +1770,9 @@ open class IdentityProviderProtocolImpl: IdentityProviderProtocol, @unchecked Se
     // TODO: We'd like this to be `private` but for Swifty reasons,
     // we can't implement `FfiConverter` without making this `required` and we can't
     // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
     required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
         self.pointer = pointer
     }
@@ -2045,7 +2105,7 @@ public func FfiConverterTypeIdentityProviderProtocol_lower(_ value: IdentityProv
 
 
 
-public protocol KeyPackageFfiProtocol: AnyObject {
+public protocol KeyPackageFfiProtocol: AnyObject, Sendable {
     
     func getCipherSuite()  -> CipherSuiteFfi
     
@@ -2070,6 +2130,9 @@ open class KeyPackageFfi: KeyPackageFfiProtocol, @unchecked Sendable {
     // TODO: We'd like this to be `private` but for Swifty reasons,
     // we can't implement `FfiConverter` without making this `required` and we can't
     // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
     required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
         self.pointer = pointer
     }
@@ -2191,7 +2254,7 @@ public func FfiConverterTypeKeyPackageFFI_lower(_ value: KeyPackageFfi) -> Unsaf
 
 
 
-public protocol KeyPackageStorageProtocol: AnyObject {
+public protocol KeyPackageStorageProtocol: AnyObject, Sendable {
     
     /**
      * Delete [`KeyPackageData`] referenced by `id`.
@@ -2236,6 +2299,9 @@ open class KeyPackageStorageProtocolImpl: KeyPackageStorageProtocol, @unchecked 
     // TODO: We'd like this to be `private` but for Swifty reasons,
     // we can't implement `FfiConverter` without making this `required` and we can't
     // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
     required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
         self.pointer = pointer
     }
@@ -2478,7 +2544,7 @@ public func FfiConverterTypeKeyPackageStorageProtocol_lower(_ value: KeyPackageS
 
 
 
-public protocol MlsMemberFfiProtocol: AnyObject {
+public protocol MlsMemberFfiProtocol: AnyObject, Sendable {
     
     func getIndex()  -> UInt32
     
@@ -2499,6 +2565,9 @@ open class MlsMemberFfi: MlsMemberFfiProtocol, @unchecked Sendable {
     // TODO: We'd like this to be `private` but for Swifty reasons,
     // we can't implement `FfiConverter` without making this `required` and we can't
     // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
     required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
         self.pointer = pointer
     }
@@ -2619,7 +2688,7 @@ public func FfiConverterTypeMLSMemberFFI_lower(_ value: MlsMemberFfi) -> UnsafeM
 /**
  * Matches types in mls_rs::group::message_processor
  */
-public protocol MessageFfiProtocol: AnyObject {
+public protocol MessageFfiProtocol: AnyObject, Sendable {
     
     func epoch()  -> UInt64?
     
@@ -2627,11 +2696,15 @@ public protocol MessageFfiProtocol: AnyObject {
     
     func intoKeyPackage() throws  -> KeyPackageFfi
     
+    func isWelcome()  -> Bool
+    
     func privateMessageContentType()  -> UInt8?
     
     func toBytes() throws  -> Data
     
-    func uncheckedAuthData(expectedOuterType: UInt8, expectedInnerType: UInt8?) throws  -> MessageFfi?
+    func uncheckedAuthData(expectedOuterType: UInt8) throws  -> Data?
+    
+    func uncheckedAuthDataMessage(expectedOuterType: UInt8, expectedInnerType: UInt8?) throws  -> MessageFfi?
     
     func wireFormat()  -> UInt16
     
@@ -2653,6 +2726,9 @@ open class MessageFfi: MessageFfiProtocol, @unchecked Sendable {
     // TODO: We'd like this to be `private` but for Swifty reasons,
     // we can't implement `FfiConverter` without making this `required` and we can't
     // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
     required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
         self.pointer = pointer
     }
@@ -2717,6 +2793,13 @@ open func intoKeyPackage()throws  -> KeyPackageFfi  {
 })
 }
     
+open func isWelcome() -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+    uniffi_mls_rs_uniffi_ios_fn_method_messageffi_is_welcome(self.uniffiClonePointer(),$0
+    )
+})
+}
+    
 open func privateMessageContentType() -> UInt8?  {
     return try!  FfiConverterOptionUInt8.lift(try! rustCall() {
     uniffi_mls_rs_uniffi_ios_fn_method_messageffi_private_message_content_type(self.uniffiClonePointer(),$0
@@ -2731,9 +2814,17 @@ open func toBytes()throws  -> Data  {
 })
 }
     
-open func uncheckedAuthData(expectedOuterType: UInt8, expectedInnerType: UInt8?)throws  -> MessageFfi?  {
-    return try  FfiConverterOptionTypeMessageFFI.lift(try rustCallWithError(FfiConverterTypeMlSrsError_lift) {
+open func uncheckedAuthData(expectedOuterType: UInt8)throws  -> Data?  {
+    return try  FfiConverterOptionData.lift(try rustCallWithError(FfiConverterTypeMlSrsError_lift) {
     uniffi_mls_rs_uniffi_ios_fn_method_messageffi_unchecked_auth_data(self.uniffiClonePointer(),
+        FfiConverterUInt8.lower(expectedOuterType),$0
+    )
+})
+}
+    
+open func uncheckedAuthDataMessage(expectedOuterType: UInt8, expectedInnerType: UInt8?)throws  -> MessageFfi?  {
+    return try  FfiConverterOptionTypeMessageFFI.lift(try rustCallWithError(FfiConverterTypeMlSrsError_lift) {
+    uniffi_mls_rs_uniffi_ios_fn_method_messageffi_unchecked_auth_data_message(self.uniffiClonePointer(),
         FfiConverterUInt8.lower(expectedOuterType),
         FfiConverterOptionUInt8.lower(expectedInnerType),$0
     )
@@ -2805,7 +2896,182 @@ public func FfiConverterTypeMessageFFI_lower(_ value: MessageFfi) -> UnsafeMutab
 
 
 
-public protocol SigningIdentityFfiProtocol: AnyObject {
+public protocol PreSharedKeyStorageProtocol: AnyObject, Sendable {
+    
+    func get(id: Data) throws  -> Data?
+    
+}
+open class PreSharedKeyStorageProtocolImpl: PreSharedKeyStorageProtocol, @unchecked Sendable {
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noPointer: NoPointer) {
+        self.pointer = nil
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_mls_rs_uniffi_ios_fn_clone_presharedkeystorageprotocol(self.pointer, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_mls_rs_uniffi_ios_fn_free_presharedkeystorageprotocol(pointer, $0) }
+    }
+
+    
+
+    
+open func get(id: Data)throws  -> Data?  {
+    return try  FfiConverterOptionData.lift(try rustCallWithError(FfiConverterTypeMlSrsError_lift) {
+    uniffi_mls_rs_uniffi_ios_fn_method_presharedkeystorageprotocol_get(self.uniffiClonePointer(),
+        FfiConverterData.lower(id),$0
+    )
+})
+}
+    
+
+}
+
+
+// Put the implementation in a struct so we don't pollute the top-level namespace
+fileprivate struct UniffiCallbackInterfacePreSharedKeyStorageProtocol {
+
+    // Create the VTable using a series of closures.
+    // Swift automatically converts these into C callback functions.
+    //
+    // This creates 1-element array, since this seems to be the only way to construct a const
+    // pointer that we can pass to the Rust code.
+    static let vtable: [UniffiVTableCallbackInterfacePreSharedKeyStorageProtocol] = [UniffiVTableCallbackInterfacePreSharedKeyStorageProtocol(
+        get: { (
+            uniffiHandle: UInt64,
+            id: RustBuffer,
+            uniffiOutReturn: UnsafeMutablePointer<RustBuffer>,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> Data? in
+                guard let uniffiObj = try? FfiConverterTypePreSharedKeyStorageProtocol.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try uniffiObj.get(
+                     id: try FfiConverterData.lift(id)
+                )
+            }
+
+            
+            let writeReturn = { uniffiOutReturn.pointee = FfiConverterOptionData.lower($0) }
+            uniffiTraitInterfaceCallWithError(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn,
+                lowerError: FfiConverterTypeMlSrsError_lower
+            )
+        },
+        uniffiFree: { (uniffiHandle: UInt64) -> () in
+            let result = try? FfiConverterTypePreSharedKeyStorageProtocol.handleMap.remove(handle: uniffiHandle)
+            if result == nil {
+                print("Uniffi callback interface PreSharedKeyStorageProtocol: handle missing in uniffiFree")
+            }
+        }
+    )]
+}
+
+private func uniffiCallbackInitPreSharedKeyStorageProtocol() {
+    uniffi_mls_rs_uniffi_ios_fn_init_callback_vtable_presharedkeystorageprotocol(UniffiCallbackInterfacePreSharedKeyStorageProtocol.vtable)
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePreSharedKeyStorageProtocol: FfiConverter {
+    fileprivate static let handleMap = UniffiHandleMap<PreSharedKeyStorageProtocol>()
+
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = PreSharedKeyStorageProtocol
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> PreSharedKeyStorageProtocol {
+        return PreSharedKeyStorageProtocolImpl(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: PreSharedKeyStorageProtocol) -> UnsafeMutableRawPointer {
+        guard let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: handleMap.insert(obj: value))) else {
+            fatalError("Cast to UnsafeMutableRawPointer failed")
+        }
+        return ptr
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PreSharedKeyStorageProtocol {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if (ptr == nil) {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: PreSharedKeyStorageProtocol, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePreSharedKeyStorageProtocol_lift(_ pointer: UnsafeMutableRawPointer) throws -> PreSharedKeyStorageProtocol {
+    return try FfiConverterTypePreSharedKeyStorageProtocol.lift(pointer)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePreSharedKeyStorageProtocol_lower(_ value: PreSharedKeyStorageProtocol) -> UnsafeMutableRawPointer {
+    return FfiConverterTypePreSharedKeyStorageProtocol.lower(value)
+}
+
+
+
+
+
+
+public protocol SigningIdentityFfiProtocol: AnyObject, Sendable {
     
     func basicCredential()  -> Data?
     
@@ -2826,6 +3092,9 @@ open class SigningIdentityFfi: SigningIdentityFfiProtocol, @unchecked Sendable {
     // TODO: We'd like this to be `private` but for Swifty reasons,
     // we can't implement `FfiConverter` without making this `required` and we can't
     // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
     required public init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
         self.pointer = pointer
     }
@@ -2954,6 +3223,7 @@ public struct ClientConfigFfi {
     public var clientKeypackageStorage: KeyPackageStorageProtocol
     public var groupStateStorage: GroupStateStorageProtocol
     public var identityProviderStorage: IdentityProviderProtocol
+    public var preSharedKeyStorage: PreSharedKeyStorageProtocol
     /**
      * Use the ratchet tree extension. If this is false, then you
      * must supply `ratchet_tree` out of band to clients.
@@ -2962,7 +3232,7 @@ public struct ClientConfigFfi {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(clientKeypackageStorage: KeyPackageStorageProtocol, groupStateStorage: GroupStateStorageProtocol, identityProviderStorage: IdentityProviderProtocol, 
+    public init(clientKeypackageStorage: KeyPackageStorageProtocol, groupStateStorage: GroupStateStorageProtocol, identityProviderStorage: IdentityProviderProtocol, preSharedKeyStorage: PreSharedKeyStorageProtocol, 
         /**
          * Use the ratchet tree extension. If this is false, then you
          * must supply `ratchet_tree` out of band to clients.
@@ -2970,6 +3240,7 @@ public struct ClientConfigFfi {
         self.clientKeypackageStorage = clientKeypackageStorage
         self.groupStateStorage = groupStateStorage
         self.identityProviderStorage = identityProviderStorage
+        self.preSharedKeyStorage = preSharedKeyStorage
         self.useRatchetTreeExtension = useRatchetTreeExtension
     }
 }
@@ -2990,6 +3261,7 @@ public struct FfiConverterTypeClientConfigFFI: FfiConverterRustBuffer {
                 clientKeypackageStorage: FfiConverterTypeKeyPackageStorageProtocol.read(from: &buf), 
                 groupStateStorage: FfiConverterTypeGroupStateStorageProtocol.read(from: &buf), 
                 identityProviderStorage: FfiConverterTypeIdentityProviderProtocol.read(from: &buf), 
+                preSharedKeyStorage: FfiConverterTypePreSharedKeyStorageProtocol.read(from: &buf), 
                 useRatchetTreeExtension: FfiConverterBool.read(from: &buf)
         )
     }
@@ -2998,6 +3270,7 @@ public struct FfiConverterTypeClientConfigFFI: FfiConverterRustBuffer {
         FfiConverterTypeKeyPackageStorageProtocol.write(value.clientKeypackageStorage, into: &buf)
         FfiConverterTypeGroupStateStorageProtocol.write(value.groupStateStorage, into: &buf)
         FfiConverterTypeIdentityProviderProtocol.write(value.identityProviderStorage, into: &buf)
+        FfiConverterTypePreSharedKeyStorageProtocol.write(value.preSharedKeyStorage, into: &buf)
         FfiConverterBool.write(value.useRatchetTreeExtension, into: &buf)
     }
 }
@@ -3540,87 +3813,6 @@ public func FfiConverterTypeProtocolVersionFFI_lower(_ value: ProtocolVersionFfi
 /**
  * A ([`SignaturePublicKey`], [`SignatureSecretKey`]) pair.
  */
-public struct SignatureKeypair {
-    public var cipherSuite: CipherSuiteFfi
-    public var publicKey: SignaturePublicKey
-    public var secretKey: SignatureSecretKey
-
-    // Default memberwise initializers are never public by default, so we
-    // declare one manually.
-    public init(cipherSuite: CipherSuiteFfi, publicKey: SignaturePublicKey, secretKey: SignatureSecretKey) {
-        self.cipherSuite = cipherSuite
-        self.publicKey = publicKey
-        self.secretKey = secretKey
-    }
-}
-
-#if compiler(>=6)
-extension SignatureKeypair: Sendable {}
-#endif
-
-
-extension SignatureKeypair: Equatable, Hashable {
-    public static func ==(lhs: SignatureKeypair, rhs: SignatureKeypair) -> Bool {
-        if lhs.cipherSuite != rhs.cipherSuite {
-            return false
-        }
-        if lhs.publicKey != rhs.publicKey {
-            return false
-        }
-        if lhs.secretKey != rhs.secretKey {
-            return false
-        }
-        return true
-    }
-
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(cipherSuite)
-        hasher.combine(publicKey)
-        hasher.combine(secretKey)
-    }
-}
-
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeSignatureKeypair: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SignatureKeypair {
-        return
-            try SignatureKeypair(
-                cipherSuite: FfiConverterTypeCipherSuiteFFI.read(from: &buf), 
-                publicKey: FfiConverterTypeSignaturePublicKey.read(from: &buf), 
-                secretKey: FfiConverterTypeSignatureSecretKey.read(from: &buf)
-        )
-    }
-
-    public static func write(_ value: SignatureKeypair, into buf: inout [UInt8]) {
-        FfiConverterTypeCipherSuiteFFI.write(value.cipherSuite, into: &buf)
-        FfiConverterTypeSignaturePublicKey.write(value.publicKey, into: &buf)
-        FfiConverterTypeSignatureSecretKey.write(value.secretKey, into: &buf)
-    }
-}
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeSignatureKeypair_lift(_ buf: RustBuffer) throws -> SignatureKeypair {
-    return try FfiConverterTypeSignatureKeypair.lift(buf)
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeSignatureKeypair_lower(_ value: SignatureKeypair) -> RustBuffer {
-    return FfiConverterTypeSignatureKeypair.lower(value)
-}
-
-
-/**
- * A ([`SignaturePublicKey`], [`SignatureSecretKey`]) pair.
- */
 public struct SignatureKeypairFfi {
     public var cipherSuite: CipherSuiteFfi
     public var publicKey: SignaturePublicKeyFfi
@@ -3702,71 +3894,6 @@ public func FfiConverterTypeSignatureKeypairFFI_lower(_ value: SignatureKeypairF
 /**
  * A [`mls_rs::crypto::SignaturePublicKey`] wrapper.
  */
-public struct SignaturePublicKey {
-    public var bytes: Data
-
-    // Default memberwise initializers are never public by default, so we
-    // declare one manually.
-    public init(bytes: Data) {
-        self.bytes = bytes
-    }
-}
-
-#if compiler(>=6)
-extension SignaturePublicKey: Sendable {}
-#endif
-
-
-extension SignaturePublicKey: Equatable, Hashable {
-    public static func ==(lhs: SignaturePublicKey, rhs: SignaturePublicKey) -> Bool {
-        if lhs.bytes != rhs.bytes {
-            return false
-        }
-        return true
-    }
-
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(bytes)
-    }
-}
-
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeSignaturePublicKey: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SignaturePublicKey {
-        return
-            try SignaturePublicKey(
-                bytes: FfiConverterData.read(from: &buf)
-        )
-    }
-
-    public static func write(_ value: SignaturePublicKey, into buf: inout [UInt8]) {
-        FfiConverterData.write(value.bytes, into: &buf)
-    }
-}
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeSignaturePublicKey_lift(_ buf: RustBuffer) throws -> SignaturePublicKey {
-    return try FfiConverterTypeSignaturePublicKey.lift(buf)
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeSignaturePublicKey_lower(_ value: SignaturePublicKey) -> RustBuffer {
-    return FfiConverterTypeSignaturePublicKey.lower(value)
-}
-
-
-/**
- * A [`mls_rs::crypto::SignaturePublicKey`] wrapper.
- */
 public struct SignaturePublicKeyFfi {
     public var bytes: Data
 
@@ -3826,71 +3953,6 @@ public func FfiConverterTypeSignaturePublicKeyFFI_lift(_ buf: RustBuffer) throws
 #endif
 public func FfiConverterTypeSignaturePublicKeyFFI_lower(_ value: SignaturePublicKeyFfi) -> RustBuffer {
     return FfiConverterTypeSignaturePublicKeyFFI.lower(value)
-}
-
-
-/**
- * A [`mls_rs::crypto::SignatureSecretKey`] wrapper.
- */
-public struct SignatureSecretKey {
-    public var bytes: Data
-
-    // Default memberwise initializers are never public by default, so we
-    // declare one manually.
-    public init(bytes: Data) {
-        self.bytes = bytes
-    }
-}
-
-#if compiler(>=6)
-extension SignatureSecretKey: Sendable {}
-#endif
-
-
-extension SignatureSecretKey: Equatable, Hashable {
-    public static func ==(lhs: SignatureSecretKey, rhs: SignatureSecretKey) -> Bool {
-        if lhs.bytes != rhs.bytes {
-            return false
-        }
-        return true
-    }
-
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(bytes)
-    }
-}
-
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeSignatureSecretKey: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SignatureSecretKey {
-        return
-            try SignatureSecretKey(
-                bytes: FfiConverterData.read(from: &buf)
-        )
-    }
-
-    public static func write(_ value: SignatureSecretKey, into buf: inout [UInt8]) {
-        FfiConverterData.write(value.bytes, into: &buf)
-    }
-}
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeSignatureSecretKey_lift(_ buf: RustBuffer) throws -> SignatureSecretKey {
-    return try FfiConverterTypeSignatureSecretKey.lift(buf)
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeSignatureSecretKey_lower(_ value: SignatureSecretKey) -> RustBuffer {
-    return FfiConverterTypeSignatureSecretKey.lower(value)
 }
 
 
@@ -4021,6 +4083,7 @@ public func FfiConverterTypeCipherSuiteFFI_lower(_ value: CipherSuiteFfi) -> Rus
 
 
 extension CipherSuiteFfi: Equatable, Hashable {}
+
 
 
 
@@ -4180,7 +4243,7 @@ public func FfiConverterTypeMemberValidationContextFFI_lower(_ value: MemberVali
 
 
 
-public enum MlSrsError {
+public enum MlSrsError: Swift.Error {
 
     
     
@@ -4317,6 +4380,7 @@ extension MlSrsError: Equatable, Hashable {}
 
 
 
+
 extension MlSrsError: Foundation.LocalizedError {
     public var errorDescription: String? {
         String(reflecting: self)
@@ -4333,6 +4397,7 @@ public enum ProposalFfi {
     )
     case update(new: SigningIdentityFfi, senderIndex: UInt32
     )
+    case psk
     case remove(UInt32
     )
 }
@@ -4358,7 +4423,9 @@ public struct FfiConverterTypeProposalFFI: FfiConverterRustBuffer {
         case 2: return .update(new: try FfiConverterTypeSigningIdentityFFI.read(from: &buf), senderIndex: try FfiConverterUInt32.read(from: &buf)
         )
         
-        case 3: return .remove(try FfiConverterUInt32.read(from: &buf)
+        case 3: return .psk
+        
+        case 4: return .remove(try FfiConverterUInt32.read(from: &buf)
         )
         
         default: throw UniffiInternalError.unexpectedEnumCase
@@ -4380,8 +4447,12 @@ public struct FfiConverterTypeProposalFFI: FfiConverterRustBuffer {
             FfiConverterUInt32.write(senderIndex, into: &buf)
             
         
-        case let .remove(v1):
+        case .psk:
             writeInt(&buf, Int32(3))
+        
+        
+        case let .remove(v1):
+            writeInt(&buf, Int32(4))
             FfiConverterUInt32.write(v1, into: &buf)
             
         }
@@ -4469,6 +4540,7 @@ extension ProtocolVersion: Equatable, Hashable {}
 
 
 
+
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 /**
@@ -4488,12 +4560,12 @@ public enum ReceivedMessageFfi {
     /**
      * A new commit was processed creating a new group state.
      */
-    case commit(committer: SigningIdentityFfi, effect: CommitEffectFfi
+    case commit(committer: SigningIdentityFfi, effect: CommitEffectFfi, authenticatedData: Data
     )
     /**
      * A proposal was received.
      */
-    case receivedProposal(sender: SigningIdentityFfi, proposal: ProposalFfi
+    case receivedProposal(sender: SigningIdentityFfi, proposal: ProposalFfi, authenticatedData: Data
     )
     /**
      * Validated GroupInfo object.
@@ -4527,10 +4599,10 @@ public struct FfiConverterTypeReceivedMessageFFI: FfiConverterRustBuffer {
         case 1: return .applicationMessage(sender: try FfiConverterTypeSigningIdentityFFI.read(from: &buf), data: try FfiConverterData.read(from: &buf), authenticatedData: try FfiConverterData.read(from: &buf)
         )
         
-        case 2: return .commit(committer: try FfiConverterTypeSigningIdentityFFI.read(from: &buf), effect: try FfiConverterTypeCommitEffectFFI.read(from: &buf)
+        case 2: return .commit(committer: try FfiConverterTypeSigningIdentityFFI.read(from: &buf), effect: try FfiConverterTypeCommitEffectFFI.read(from: &buf), authenticatedData: try FfiConverterData.read(from: &buf)
         )
         
-        case 3: return .receivedProposal(sender: try FfiConverterTypeSigningIdentityFFI.read(from: &buf), proposal: try FfiConverterTypeProposalFFI.read(from: &buf)
+        case 3: return .receivedProposal(sender: try FfiConverterTypeSigningIdentityFFI.read(from: &buf), proposal: try FfiConverterTypeProposalFFI.read(from: &buf), authenticatedData: try FfiConverterData.read(from: &buf)
         )
         
         case 4: return .groupInfo
@@ -4554,16 +4626,18 @@ public struct FfiConverterTypeReceivedMessageFFI: FfiConverterRustBuffer {
             FfiConverterData.write(authenticatedData, into: &buf)
             
         
-        case let .commit(committer,effect):
+        case let .commit(committer,effect,authenticatedData):
             writeInt(&buf, Int32(2))
             FfiConverterTypeSigningIdentityFFI.write(committer, into: &buf)
             FfiConverterTypeCommitEffectFFI.write(effect, into: &buf)
+            FfiConverterData.write(authenticatedData, into: &buf)
             
         
-        case let .receivedProposal(sender,proposal):
+        case let .receivedProposal(sender,proposal,authenticatedData):
             writeInt(&buf, Int32(3))
             FfiConverterTypeSigningIdentityFFI.write(sender, into: &buf)
             FfiConverterTypeProposalFFI.write(proposal, into: &buf)
+            FfiConverterData.write(authenticatedData, into: &buf)
             
         
         case .groupInfo:
@@ -4956,10 +5030,17 @@ public func clientConfigDefault() -> ClientConfigFfi  {
  * See [`mls_rs::CipherSuiteProvider::signature_key_generate`]
  * for details.
  */
-public func generateSignatureKeypair(cipherSuite: CipherSuiteFfi)throws  -> SignatureKeypair  {
-    return try  FfiConverterTypeSignatureKeypair_lift(try rustCallWithError(FfiConverterTypeMlSrsError_lift) {
+public func generateSignatureKeypair(cipherSuite: CipherSuiteFfi)throws  -> SignatureKeypairFfi  {
+    return try  FfiConverterTypeSignatureKeypairFFI_lift(try rustCallWithError(FfiConverterTypeMlSrsError_lift) {
     uniffi_mls_rs_uniffi_ios_fn_func_generate_signature_keypair(
         FfiConverterTypeCipherSuiteFFI_lower(cipherSuite),$0
+    )
+})
+}
+public func mlsEncode(externalPskId: Data)throws  -> Data  {
+    return try  FfiConverterData.lift(try rustCallWithError(FfiConverterTypeMlSrsError_lift) {
+    uniffi_mls_rs_uniffi_ios_fn_func_mls_encode(
+        FfiConverterData.lower(externalPskId),$0
     )
 })
 }
@@ -4982,7 +5063,10 @@ private let initializationResult: InitializationResult = {
     if (uniffi_mls_rs_uniffi_ios_checksum_func_client_config_default() != 16721) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_mls_rs_uniffi_ios_checksum_func_generate_signature_keypair() != 22124) {
+    if (uniffi_mls_rs_uniffi_ios_checksum_func_generate_signature_keypair() != 3246) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_mls_rs_uniffi_ios_checksum_func_mls_encode() != 22641) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_mls_rs_uniffi_ios_checksum_method_clientffi_create_group() != 29316) {
@@ -5003,7 +5087,13 @@ private let initializationResult: InitializationResult = {
     if (uniffi_mls_rs_uniffi_ios_checksum_method_groupffi_add_members() != 59554) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_mls_rs_uniffi_ios_checksum_method_groupffi_commit() != 31502) {
+    if (uniffi_mls_rs_uniffi_ios_checksum_method_groupffi_clear_proposal_cache() != 51266) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_mls_rs_uniffi_ios_checksum_method_groupffi_commit() != 38693) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_mls_rs_uniffi_ios_checksum_method_groupffi_commit_new_identity() != 44978) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_mls_rs_uniffi_ios_checksum_method_groupffi_current_epoch() != 32833) {
@@ -5028,6 +5118,12 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_mls_rs_uniffi_ios_checksum_method_groupffi_process_incoming_message() != 59118) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_mls_rs_uniffi_ios_checksum_method_groupffi_propose_add_members() != 35082) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_mls_rs_uniffi_ios_checksum_method_groupffi_propose_external_psk() != 41122) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_mls_rs_uniffi_ios_checksum_method_groupffi_propose_update() != 5017) {
@@ -5099,16 +5195,25 @@ private let initializationResult: InitializationResult = {
     if (uniffi_mls_rs_uniffi_ios_checksum_method_messageffi_into_key_package() != 6865) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_mls_rs_uniffi_ios_checksum_method_messageffi_is_welcome() != 3267) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_mls_rs_uniffi_ios_checksum_method_messageffi_private_message_content_type() != 62397) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_mls_rs_uniffi_ios_checksum_method_messageffi_to_bytes() != 47388) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_mls_rs_uniffi_ios_checksum_method_messageffi_unchecked_auth_data() != 55172) {
+    if (uniffi_mls_rs_uniffi_ios_checksum_method_messageffi_unchecked_auth_data() != 52364) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_mls_rs_uniffi_ios_checksum_method_messageffi_unchecked_auth_data_message() != 36338) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_mls_rs_uniffi_ios_checksum_method_messageffi_wire_format() != 23577) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_mls_rs_uniffi_ios_checksum_method_presharedkeystorageprotocol_get() != 27474) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_mls_rs_uniffi_ios_checksum_method_signingidentityffi_basic_credential() != 49478) {
@@ -5117,7 +5222,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_mls_rs_uniffi_ios_checksum_method_signingidentityffi_node_signing_key() != 31789) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_mls_rs_uniffi_ios_checksum_constructor_clientffi_new() != 42020) {
+    if (uniffi_mls_rs_uniffi_ios_checksum_constructor_clientffi_new() != 52564) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_mls_rs_uniffi_ios_checksum_constructor_messageffi_new() != 16017) {
@@ -5130,6 +5235,7 @@ private let initializationResult: InitializationResult = {
     uniffiCallbackInitGroupStateStorageProtocol()
     uniffiCallbackInitIdentityProviderProtocol()
     uniffiCallbackInitKeyPackageStorageProtocol()
+    uniffiCallbackInitPreSharedKeyStorageProtocol()
     return InitializationResult.ok
 }()
 
